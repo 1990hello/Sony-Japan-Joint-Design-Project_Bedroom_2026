@@ -87,7 +87,7 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
   return (
     <div className="fixed bottom-5 left-1/2 -translate-x-1/2 w-[94vw] max-w-[880px] z-50 pointer-events-auto transition-transform duration-500 ease-out select-none">
       {/* Collapse / Expand Toggle Button */}
-      <div className={`flex justify-center -mb-px transition-transform duration-300 ${isCollapsed ? 'translate-y-28' : 'translate-y-0'}`}>
+      <div className={`flex justify-center -mb-px transition-transform duration-300 ${isCollapsed ? 'translate-y-12' : 'translate-y-0'}`}>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="flex items-center gap-1.5 px-3 py-1 bg-stone-900/90 text-stone-400 hover:text-stone-200 border border-b-0 border-stone-800 rounded-t-lg text-xs tracking-wider uppercase font-medium transition-colors shadow-sm"
