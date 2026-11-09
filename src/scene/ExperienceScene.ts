@@ -335,7 +335,7 @@ export class ExperienceScene {
       if (orbIntersects.length > 0) {
         this.dockAndOrb.isGrabbed = true;
         this.dockAndOrb.setDocked(false);
-        this.callbacks.onInstructionChange('Action: Drag the orb freely, or wave your hand to dock it');
+        this.callbacks.onInstructionChange('Action: Pinch and hold the orb, then move your hand. Release your pinch, then wave side-to-side to return it to the dock.');
         return;
       }
     }
@@ -641,7 +641,7 @@ export class ExperienceScene {
     this.currentStage = 'stage3_closure';
     this.setSubstate('orb_free_interaction');
     this.callbacks.onStageChange('stage3_closure', 'orb_free_interaction');
-    this.callbacks.onInstructionChange('Action: Drag the orb freely, or wave your hand to dock it');
+    this.callbacks.onInstructionChange('Action: Pinch and hold the orb, then move your hand. Release your pinch, then wave side-to-side to return it to the dock.');
 
     this.bedroom.setAtmosphereTransition(1.0);
   }
