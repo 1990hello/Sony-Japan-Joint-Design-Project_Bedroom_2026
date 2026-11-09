@@ -257,7 +257,7 @@ export class BedroomEnvironment {
 
     // Modern Minimalist Arch Lamp on Desk (Left side)
     const lampGroup = new THREE.Group();
-    lampGroup.position.set(-0.62, this.deskSurfaceY, -0.2);
+    lampGroup.position.set(-0.70, this.deskSurfaceY, -0.27);
 
     const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.07, 0.015, 24), legMat);
     lampBase.position.set(0, 0.0075, 0);
@@ -576,7 +576,7 @@ export class BedroomEnvironment {
     // Glass of water on desk for Stage 3 dissolution ritual
     // Positioned at the far-left side of the tabletop, away from the seated participant.
     const glassGroup = new THREE.Group();
-    glassGroup.position.set(-0.70, this.deskSurfaceY, -0.27);
+    glassGroup.position.set(-0.62, this.deskSurfaceY, -0.2);
 
     // Physical Glass Material
     const glassMat = new THREE.MeshPhysicalMaterial({
@@ -648,7 +648,7 @@ export class BedroomEnvironment {
 
     // 3. Desk Lamp Practical Light (warm task illumination over desk)
     this.deskLampLight = new THREE.PointLight(0xffe2b3, 0.9, 3.2, 1.8);
-    this.deskLampLight.position.set(-0.44, this.deskSurfaceY + 0.35, -0.1);
+    this.deskLampLight.position.set(-0.52, this.deskSurfaceY + 0.35, -0.17);
     this.deskLampLight.castShadow = true;
     this.deskLampLight.shadow.mapSize.width = 1024;
     this.deskLampLight.shadow.mapSize.height = 1024;
