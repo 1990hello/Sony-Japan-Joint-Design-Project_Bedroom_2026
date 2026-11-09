@@ -152,7 +152,6 @@ export class HandTracker {
                 throw new Error('Could not initialize MediaPipe vision tasks WebAssembly resolver.');
               }
       
-              startupStage = 'hand landmark model loading';
       
               // Use CPU directly for predictable browser startup. A failed GPU
               // initialisation can leave the Emscripten runtime partially created;
