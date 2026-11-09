@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ExperienceScene } from '../scene/ExperienceScene';
 import { handTracker } from '../tracking/handTracker';
+import { getSharedCameraStream } from '../shared/sharedCamera';
 import { soundscape } from '../audio/soundscape';
 import { InstructionDock } from '../components/InstructionDock';
 import { TopBar } from '../components/TopBar';
@@ -50,6 +51,12 @@ export default function App() {
       scene.handleHandGesture(state);
     });
 
+    // If the user already enabled the webcam in the other experience,
+    // resume gesture tracking automatically without another permission click.
+    if (getSharedCameraStream()) {
+      handTracker.start().then((started) => setIsCameraActive(started));
+    }
+
     return () => {
       scene.dispose();
       sceneRef.current = null;
@@ -60,7 +67,7 @@ export default function App() {
   // Toggle Webcam Hand Tracking
   const handleToggleCamera = useCallback(async () => {
     if (isCameraActive) {
-      handTracker.stop();
+      handTracker.stop(true);
       setIsCameraActive(false);
       setHandState(null);
     } else {
