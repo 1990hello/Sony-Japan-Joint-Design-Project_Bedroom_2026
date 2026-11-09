@@ -73,11 +73,14 @@ export class FootstepsAndFilm {
       new THREE.Vector3(0.82, 0.746, -0.23),
       // Keep floor-level footprints clearly above both the rug surface (y = 0.005)
       // and the room floor so the translucent decals cannot appear buried or z-fight.
+      // Step off the desk, move across to the room's right-hand side, then follow
+      // that side of the room toward the relocated doorway.
       new THREE.Vector3(1.02, 0.025, -0.28),
-      new THREE.Vector3(1.12, 0.025, -0.85),
-      new THREE.Vector3(1.35, 0.025, -1.55),
-      new THREE.Vector3(1.9, 0.025, -2.15),
-      new THREE.Vector3(2.55, 0.025, -3.35),
+      new THREE.Vector3(2.15, 0.025, -0.32),
+      new THREE.Vector3(3.05, 0.025, -0.48),
+      new THREE.Vector3(3.08, 0.025, -1.25),
+      new THREE.Vector3(3.08, 0.025, -2.2),
+      new THREE.Vector3(3.08, 0.025, -3.1),
       // Finish at the relocated doorway (x = 3.48, z = -4.1).
       new THREE.Vector3(3.4, 0.025, -4.1),
     ]);
