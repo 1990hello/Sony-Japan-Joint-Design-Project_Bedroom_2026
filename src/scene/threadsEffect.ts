@@ -48,7 +48,8 @@ export class ThreadsEffect {
   }
 
   private buildBlackThreads() {
-    // 14 intricate dark threads winding around the orb's perimeter
+    // Clean tether-like strands connecting the docking station to the orb's underside.
+    // The thread group origin follows the orb centre, so these coordinates are local to it.
     const blackMat = new THREE.LineBasicMaterial({
       color: 0x111010,
       linewidth: 2,
@@ -56,27 +57,33 @@ export class ThreadsEffect {
       opacity: 0.88,
     });
 
-    for (let t = 0; t < 16; t++) {
+    const strandCount = 8;
+    const dockY = -0.195; // upper surface of the docking station, relative to orb centre
+    const orbUndersideY = -0.068; // just inside the orb's lower edge
+    const dockRadius = 0.055;
+    const orbRadius = 0.032;
+
+    for (let i = 0; i < strandCount; i++) {
+      const angle = (i / strandCount) * Math.PI * 2;
       const points: THREE.Vector3[] = [];
-      const steps = 36;
-      const radiusBase = 0.085 + (t % 4) * 0.015;
-      const angleOffset = (t / 16) * Math.PI * 2;
-      const tilt = (t % 3 - 1) * 0.45;
 
-      for (let s = 0; s <= steps; s++) {
-        const theta = (s / steps) * Math.PI * 2 * 1.6 + angleOffset;
-        const phi = (s / steps - 0.5) * Math.PI * 0.85 + tilt;
-        const r = radiusBase + Math.sin(s * 0.8 + t) * 0.012;
+      // Nearly straight, gently tensioned strands; avoid loops or crossings around the orb.
+      for (let step = 0; step <= 12; step++) {
+        const t = step / 12;
+        const radius = THREE.MathUtils.lerp(dockRadius, orbRadius, t);
+        const y = THREE.MathUtils.lerp(dockY, orbUndersideY, t);
+        const subtleBow = Math.sin(t * Math.PI) * 0.003;
 
-        const x = r * Math.cos(theta) * Math.cos(phi);
-        const y = r * Math.sin(phi);
-        const z = r * Math.sin(theta) * Math.cos(phi);
-        points.push(new THREE.Vector3(x, y, z));
+        points.push(new THREE.Vector3(
+          Math.cos(angle) * (radius + subtleBow),
+          y,
+          Math.sin(angle) * (radius + subtleBow)
+        ));
       }
 
       const curve = new THREE.CatmullRomCurve3(points);
-      const curveGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(60));
-      const line = new THREE.Line(curveGeo, blackMat);
+      const geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(24));
+      const line = new THREE.Line(geometry, blackMat);
       this.blackThreadsGroup.add(line);
       this.blackCurves.push(line);
     }
@@ -302,11 +309,7 @@ export class ThreadsEffect {
       this.textCanvasMesh.lookAt(cameraPosition.x, this.textCanvasMesh.position.y + this.group.position.y, cameraPosition.z);
     }
 
-    // Swirl black threads gently
-    if (this.blackThreadsVisible && !this.isCompleted) {
-      this.blackThreadsGroup.rotation.y += delta * 0.22;
-      this.blackThreadsGroup.rotation.x += delta * 0.08;
-    }
+    // Keep the docking-station tethers aligned and steady; they should not swirl around the orb.
 
     // Golden threads dynamic orbit
     if (this.goldenThreadsActive) {
