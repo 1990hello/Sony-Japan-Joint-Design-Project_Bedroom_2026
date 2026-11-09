@@ -363,10 +363,10 @@ export class ExperienceScene {
       const orbWorldPos = this.dockAndOrb.dockPosition.clone();
       orbWorldPos.y = this.dockAndOrb.orbHoverY;
 
+      // Keep the Stage 1 screen absorption silent; overlapping rising-pitch
+      // chimes were creating a siren-like sound during the opening transition.
       this.screenManager.startAbsorption(
-        (index) => {
-          soundscape.playScreenAbsorb(index);
-        },
+        undefined,
         () => {
           // 3. All screens absorbed -> display accomplishments inside orb
           this.showAccomplishmentsInsideOrb();
