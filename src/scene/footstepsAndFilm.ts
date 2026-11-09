@@ -55,22 +55,26 @@ export class FootstepsAndFilm {
   }
 
   private buildFootstepsPath() {
-    // Generate curved path from desk front (0.3, -0.2) to doorway (3.4, -3.3)
+    // The trail begins at the orb on the tabletop, exits over the right edge,
+    // then follows the desk's right side across the floor toward the doorway.
     const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.2, 0.006, 0.2),
-      new THREE.Vector3(0.6, 0.006, -0.4),
-      new THREE.Vector3(1.1, 0.006, -1.1),
-      new THREE.Vector3(1.7, 0.006, -1.8),
-      new THREE.Vector3(2.3, 0.006, -2.4),
-      new THREE.Vector3(2.9, 0.006, -2.9),
+      new THREE.Vector3(0.0, 0.746, -0.2),
+      new THREE.Vector3(0.28, 0.746, -0.2),
+      new THREE.Vector3(0.58, 0.746, -0.2),
+      new THREE.Vector3(0.82, 0.746, -0.2),
+      new THREE.Vector3(1.02, 0.006, -0.28),
+      new THREE.Vector3(1.12, 0.006, -0.85),
+      new THREE.Vector3(1.35, 0.006, -1.55),
+      new THREE.Vector3(1.9, 0.006, -2.15),
+      new THREE.Vector3(2.55, 0.006, -2.72),
       new THREE.Vector3(3.4, 0.006, -3.3),
     ]);
 
-    const stepPoints = curve.getPoints(10);
+    const stepPoints = curve.getPoints(16);
     const footstepTex = createFootstepTexture();
 
     stepPoints.forEach((pt, i) => {
-      // Alternate left and right foot offset perpendicular to tangent
+      // Alternate left and right foot offset perpendicular to the walking direction.
       const nextPt = stepPoints[Math.min(stepPoints.length - 1, i + 1)];
       const tangent = new THREE.Vector3().subVectors(nextPt, pt).normalize();
       const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
@@ -89,7 +93,7 @@ export class FootstepsAndFilm {
       const mesh = new THREE.Mesh(geo, mat);
       mesh.rotation.x = -Math.PI / 2;
 
-      // Align rotation along walking direction
+      // Align each footprint along the route.
       const angle = Math.atan2(tangent.x, tangent.z);
       mesh.rotation.z = angle + Math.PI;
 
