@@ -25,7 +25,7 @@ export class FootstepsAndFilm {
   private onFilmPrintComplete?: () => void;
 
   // The circular film rests just in front of the firewood dock printer slot
-  public readonly filmInitialPos = new THREE.Vector3(0, 0.74 + 0.002, -0.23 + 0.155);
+  public readonly filmInitialPos = new THREE.Vector3(0, 0.74 + 0.002, -0.35 + 0.155);
   public isFilmPrinted: boolean = false;
   public isFilmGrabbed: boolean = false;
   public isFilmConsumed: boolean = false;
@@ -67,10 +67,10 @@ export class FootstepsAndFilm {
     // The trail begins at the orb on the tabletop, exits over the right edge,
     // then follows the desk's right side across the floor toward the doorway.
     const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.0, 0.746, -0.23),
-      new THREE.Vector3(0.28, 0.746, -0.23),
-      new THREE.Vector3(0.58, 0.746, -0.23),
-      new THREE.Vector3(0.82, 0.746, -0.23),
+      new THREE.Vector3(0.0, 0.746, -0.35),
+      new THREE.Vector3(0.28, 0.746, -0.35),
+      new THREE.Vector3(0.58, 0.746, -0.35),
+      new THREE.Vector3(0.82, 0.746, -0.35),
       // Keep floor-level footprints clearly above both the rug surface (y = 0.005)
       // and the room floor so the translucent decals cannot appear buried or z-fight.
       new THREE.Vector3(1.02, 0.025, -0.28),
@@ -267,7 +267,7 @@ export class FootstepsAndFilm {
     this.edibleFilmGroup.visible = true;
 
     // Begin just inside the printer slot, then extrude the circular film onto the desk.
-    this.filmPrintStart.set(0, 0.74 + 0.024, -0.23 + 0.09);
+    this.filmPrintStart.set(0, 0.74 + 0.024, -0.35 + 0.09);
     this.edibleFilmGroup.position.copy(this.filmPrintStart);
     this.edibleFilmGroup.scale.set(0.72, 0.72, 0.72);
     (this.edibleFilmMesh.material as THREE.MeshPhysicalMaterial).opacity = 0.15;
