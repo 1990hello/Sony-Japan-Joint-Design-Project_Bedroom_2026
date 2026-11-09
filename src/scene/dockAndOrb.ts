@@ -22,8 +22,8 @@ export class DockAndOrb {
   public printerSlotHatch!: THREE.Mesh;
 
   // Orb resting and hovering coordinates (Desk surface is at y = 0.74)
-  // Front-right of the tabletop from the seated participant's perspective.
-  public readonly dockPosition = new THREE.Vector3(0.52, 0.74, 0.22);
+  // Centered left-to-right and set toward the far side of the tabletop, away from the seated participant.
+  public readonly dockPosition = new THREE.Vector3(0, 0.74, -0.2);
   public readonly orbHoverY = 0.74 + 0.24; // hovering above docking station
   public currentOrbTarget = new THREE.Vector3();
   public orbVelocity = new THREE.Vector3();
