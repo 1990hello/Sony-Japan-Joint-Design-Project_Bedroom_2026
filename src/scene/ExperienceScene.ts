@@ -82,6 +82,7 @@ export class ExperienceScene {
   private previousWave: boolean = false;
   private doorwayReady = false;
   private doorwayTransitionStarted = false;
+  private doorwayReframeStarted = false;
 
   // Visual hand pointer
   private handCursorLayer: HTMLDivElement | null = null;
@@ -303,6 +304,23 @@ export class ExperienceScene {
     this.bedroom.doorwayHitArea.updateMatrixWorld(true);
     this.raycaster.setFromCamera(this.pointerNorm, this.camera);
     return this.raycaster.intersectObject(this.bedroom.doorwayHitArea, false).length > 0;
+  }
+
+  /** Return from the tabletop close-up and gently direct the user's view to the existing doorway. */
+  private reframeToDoorway(onComplete: () => void) {
+    const doorwayLookTarget = new THREE.Vector3(3.48, 1.15, -4.1);
+    this.cameraAnimation = {
+      mode: 'out',
+      startPos: this.camera.position.clone(),
+      targetPos: this.defaultCameraPos.clone(),
+      startLook: this.cameraLookTarget.clone(),
+      targetLook: doorwayLookTarget,
+      duration: 1.9,
+      elapsed: 0,
+      holdDuration: 0,
+      holdTimer: 0,
+      onComplete,
+    };
   }
 
   private beginDoorwayTransition() {
@@ -782,19 +800,25 @@ export class ExperienceScene {
     this.callbacks.onInstructionChange(`Observe: ${finalMessage}`);
     this.callbacks.onNarrationSubtitle(finalMessage);
 
-    const enableDoorwayExit = () => {
-      if (this.currentStage !== 'completed' || this.doorwayTransitionStarted || this.doorwayReady) return;
-      this.doorwayReady = true;
-      this.setSubstate('doorway_ready');
-      this.callbacks.onInstructionChange('When you are ready, pinch the doorway to enter the Aquarium.');
-      this.bedroom.setDoorwayHighlighted(true);
+    // After either ritual choice, return from the tabletop close-up and turn the
+    // seated viewpoint toward the existing doorway. Only then invite the user to pinch it.
+    const guideAttentionToDoorway = () => {
+      if (this.currentStage !== 'completed' || this.doorwayTransitionStarted || this.doorwayReady || this.doorwayReframeStarted) return;
+      this.doorwayReframeStarted = true;
+      this.reframeToDoorway(() => {
+        if (this.currentStage !== 'completed' || this.doorwayTransitionStarted) return;
+        this.doorwayReady = true;
+        this.setSubstate('doorway_ready');
+        this.callbacks.onInstructionChange('When you are ready, pinch the doorway to enter the Aquarium.');
+        this.bedroom.setDoorwayHighlighted(true);
+      });
     };
 
     setTimeout(() => {
-      soundscape.speak(finalMessage, enableDoorwayExit);
+      soundscape.speak(finalMessage, guideAttentionToDoorway);
     }, 600);
-    // Accessibility fallback if speech is unavailable or its completion callback does not fire.
-    setTimeout(enableDoorwayExit, 6500);
+    // Fallback if speech is unavailable or its completion callback does not fire.
+    setTimeout(guideAttentionToDoorway, 6500);
   }
 
   private setSubstate(sub: string) {
@@ -853,8 +877,8 @@ export class ExperienceScene {
           if (t >= 1.0) {
             const onComp = anim.onComplete;
             this.cameraAnimation = null;
-            this.camera.position.copy(this.defaultCameraPos);
-            this.cameraLookTarget.copy(this.defaultCameraTarget);
+            this.camera.position.copy(anim.targetPos);
+            this.cameraLookTarget.copy(anim.targetLook);
             if (onComp) onComp();
           }
         }
@@ -920,6 +944,7 @@ export class ExperienceScene {
     this.cameraAnimation = null;
     this.doorwayReady = false;
     this.doorwayTransitionStarted = false;
+    this.doorwayReframeStarted = false;
     this.bedroom.setDoorwayHighlighted(false);
     this.camera.position.copy(this.defaultCameraPos);
     this.cameraLookTarget.copy(this.defaultCameraTarget);
