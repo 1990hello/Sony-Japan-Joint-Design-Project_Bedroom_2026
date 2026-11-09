@@ -200,19 +200,24 @@ export class HandTracker {
       return;
     }
 
-    // Mirror horizontal for intuitive mirrored control: x = 1 - x
-    const rawX = 1 - landmarks[9].x; // Middle finger MCP as palm anchor
-    const rawY = landmarks[9].y;
-
-    // Landmark 4 = Thumb tip, Landmark 8 = Index tip
+    // Landmark 4 = Thumb tip, Landmark 8 = Index tip.
+    // During a pinch, use the midpoint between the actual pinching fingertips
+    // as the cursor anchor. The palm anchor is useful for open-hand gestures,
+    // but sits well behind the fingertips and makes precise object grabbing feel offset.
     const thumbTip = landmarks[4];
     const indexTip = landmarks[8];
     const dx = thumbTip.x - indexTip.x;
     const dy = thumbTip.y - indexTip.y;
     const dz = (thumbTip.z || 0) - (indexTip.z || 0);
     const pinchDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
     const isPinching = pinchDist < 0.085;
+
+    const rawX = isPinching
+      ? 1 - (thumbTip.x + indexTip.x) * 0.5
+      : 1 - landmarks[9].x; // Mirrored palm anchor when not pinching
+    const rawY = isPinching
+      ? (thumbTip.y + indexTip.y) * 0.5
+      : landmarks[9].y;
 
     // Finger extensions for Open Palm check (tips above MCPs relative to wrist)
     const isIndexExtended = landmarks[8].y < landmarks[6].y;
