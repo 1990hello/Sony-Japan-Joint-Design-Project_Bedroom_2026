@@ -1,7 +1,7 @@
 /**
  * EXORA Central Orb & Docking Station
  * Physically convincing glass orb with internal depth, swirling micro-particles,
- * internal accomplishments display, and 2046 consumer docking station with
+ * floating recognition tab, and 2046 consumer docking station with
  * edible-film printer slot and mist ring.
  */
 
@@ -218,10 +218,10 @@ export class DockAndOrb {
   }
 
   private buildAccomplishments() {
-    // Accomplishments card suspended inside the glass sphere
+    // A readable glass-style recognition tab floating just to the right of the orb.
     this.accomplishmentsCanvas = document.createElement('canvas');
-    this.accomplishmentsCanvas.width = 512;
-    this.accomplishmentsCanvas.height = 512;
+    this.accomplishmentsCanvas.width = 1024;
+    this.accomplishmentsCanvas.height = 768;
 
     this.accomplishmentsTexture = new THREE.CanvasTexture(this.accomplishmentsCanvas);
     this.accomplishmentsTexture.colorSpace = THREE.SRGBColorSpace;
@@ -234,16 +234,17 @@ export class DockAndOrb {
       side: THREE.DoubleSide,
     });
 
-    // Small floating card positioned at orb center
-    const cardGeo = new THREE.PlaneGeometry(0.095, 0.095);
+    const cardGeo = new THREE.PlaneGeometry(0.52, 0.39);
     this.accomplishmentsPlane = new THREE.Mesh(cardGeo, cardMat);
-    this.accomplishmentsPlane.position.set(0, 0, 0);
-    this.orbGroup.add(this.accomplishmentsPlane);
+    this.accomplishmentsPlane.position.set(this.dockPosition.x + 0.43, this.orbHoverY, this.dockPosition.z);
+    this.accomplishmentsPlane.renderOrder = 3;
+    this.accomplishmentsPlane.visible = false;
+    this.group.add(this.accomplishmentsPlane);
   }
 
   public renderAccomplishmentsText(fade: number) {
     const ctx = this.accomplishmentsCanvas.getContext('2d')!;
-    ctx.clearRect(0, 0, 512, 512);
+    ctx.clearRect(0, 0, 1024, 768);
 
     if (fade <= 0.01) {
       this.accomplishmentsTexture.needsUpdate = true;
@@ -253,66 +254,86 @@ export class DockAndOrb {
     ctx.save();
     ctx.globalAlpha = Math.min(1.0, fade);
 
-    // Soft luminous background disc inside the sphere
-    const grad = ctx.createRadialGradient(256, 256, 10, 256, 256, 240);
-    grad.addColorStop(0, 'rgba(255, 240, 220, 0.22)');
-    grad.addColorStop(0.6, 'rgba(235, 195, 140, 0.12)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
+    // Restrained translucent glass panel with a warm, luminous edge.
+    const left = 24;
+    const top = 24;
+    const width = 976;
+    const height = 720;
+    const radius = 34;
+
+    ctx.shadowColor = 'rgba(255, 196, 120, 0.22)';
+    ctx.shadowBlur = 24;
     ctx.beginPath();
-    ctx.arc(256, 256, 240, 0, Math.PI * 2);
+    ctx.moveTo(left + radius, top);
+    ctx.lineTo(left + width - radius, top);
+    ctx.quadraticCurveTo(left + width, top, left + width, top + radius);
+    ctx.lineTo(left + width, top + height - radius);
+    ctx.quadraticCurveTo(left + width, top + height, left + width - radius, top + height);
+    ctx.lineTo(left + radius, top + height);
+    ctx.quadraticCurveTo(left, top + height, left, top + height - radius);
+    ctx.lineTo(left, top + radius);
+    ctx.quadraticCurveTo(left, top, left + radius, top);
+    ctx.closePath();
+
+    const glassGradient = ctx.createLinearGradient(0, top, 1024, top + height);
+    glassGradient.addColorStop(0, 'rgba(38, 35, 33, 0.94)');
+    glassGradient.addColorStop(0.55, 'rgba(25, 28, 31, 0.91)');
+    glassGradient.addColorStop(1, 'rgba(44, 35, 29, 0.94)');
+    ctx.fillStyle = glassGradient;
     ctx.fill();
 
-    // Subtle header
-    ctx.font = '600 16px "Space Grotesk", sans-serif';
-    ctx.fillStyle = '#f0c27b';
-    ctx.textAlign = 'center';
-    ctx.fillText('TODAY\'S RECOGNITION', 256, 75);
-
-    // Divider line
-    ctx.strokeStyle = 'rgba(240, 194, 123, 0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(140, 92);
-    ctx.lineTo(372, 92);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255, 218, 170, 0.62)';
+    ctx.lineWidth = 3;
     ctx.stroke();
 
-    // 3 Required Sample Accomplishments:
-    // 1. Earpiece — Completed the 3D modelling.
-    // 2. Project 1 — Arranged a meeting with clients.
-    // 3. Project 2 — Began sketching ideas.
+    // Fine inner highlight.
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(58, 58);
+    ctx.lineTo(966, 58);
+    ctx.stroke();
+
+    // Header.
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#ffffff';
+    ctx.font = '600 32px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#f0c27b';
+    ctx.fillText("TODAY'S RECOGNITION", 92, 116);
 
-    // Item 1
-    ctx.font = '700 18px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('• Earpiece', 65, 145);
-    ctx.font = '400 16px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#e2d7cb';
-    ctx.fillText('Completed the 3D modelling.', 82, 172);
+    ctx.strokeStyle = 'rgba(240, 194, 123, 0.42)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(92, 150);
+    ctx.lineTo(932, 150);
+    ctx.stroke();
 
-    // Item 2
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '700 18px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('• Project 1', 65, 220);
-    ctx.font = '400 16px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#e2d7cb';
-    ctx.fillText('Arranged a meeting with clients.', 82, 247);
+    // Preserve the original accomplishments, with larger type for readability.
+    const items = [
+      { title: 'Earpiece', detail: 'Completed the 3D modelling.', y: 238 },
+      { title: 'Project 1', detail: 'Arranged a meeting with clients.', y: 378 },
+      { title: 'Project 2', detail: 'Began sketching ideas.', y: 518 },
+    ];
 
-    // Item 3
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '700 18px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('• Project 2', 65, 295);
-    ctx.font = '400 16px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#e2d7cb';
-    ctx.fillText('Began sketching ideas.', 82, 322);
+    items.forEach((item) => {
+      ctx.beginPath();
+      ctx.fillStyle = '#f0c27b';
+      ctx.arc(104, item.y - 12, 8, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Quote message: "Every step counts, even the ones that are just beginning."
+      ctx.font = '700 38px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(item.title, 132, item.y);
+
+      ctx.font = '400 29px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = '#e2d7cb';
+      ctx.fillText(item.detail, 132, item.y + 42);
+    });
+
     ctx.textAlign = 'center';
-    ctx.font = 'italic 500 18px "Playfair Display", Georgia, serif';
+    ctx.font = 'italic 500 27px "Playfair Display", Georgia, serif';
     ctx.fillStyle = '#ffe9c4';
-    ctx.fillText('"Every step counts,', 256, 400);
-    ctx.fillText('even the ones that are just beginning."', 256, 430);
+    ctx.fillText('"Every step counts, even the ones that are just beginning."', 512, 690);
 
     ctx.restore();
     this.accomplishmentsTexture.needsUpdate = true;
@@ -365,9 +386,9 @@ export class DockAndOrb {
       (this.innerCoreSphere.material as THREE.MeshBasicMaterial).opacity = pulse;
     }
 
-    // Orient accomplishments card to face user camera
+    // Keep the floating recognition tab facing the seated participant.
     if (this.accomplishmentsPlane && this.accomplishmentsPlane.visible) {
-      this.accomplishmentsPlane.lookAt(cameraPosition.x, this.accomplishmentsPlane.position.y + this.orbGroup.position.y, cameraPosition.z);
+      this.accomplishmentsPlane.lookAt(cameraPosition);
     }
   }
 
@@ -375,6 +396,7 @@ export class DockAndOrb {
     this.renderAccomplishmentsText(fade);
     if (this.accomplishmentsPlane) {
       (this.accomplishmentsPlane.material as THREE.MeshBasicMaterial).opacity = fade;
+      this.accomplishmentsPlane.visible = fade > 0.01;
     }
   }
 }
