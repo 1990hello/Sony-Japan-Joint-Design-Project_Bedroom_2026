@@ -48,7 +48,7 @@ export class BedroomEnvironment {
     this.group.add(floor);
 
     // Warm Woven Wool Rug in Center of Bedroom
-    const rugTexture = createFabricTexture('#d4cdc3', '#b8ae9f');
+    const rugTexture = createFabricTexture('#777067', '#625b53');
     const rugGeo = new THREE.PlaneGeometry(3.6, 4.2);
     const rugMat = new THREE.MeshStandardMaterial({
       map: rugTexture,
