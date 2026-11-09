@@ -156,7 +156,7 @@ export class FootstepsAndFilm {
     const vels = new Float32Array(count * 3);
 
     for (let i = 0; i < count; i++) {
-      pos[i * 3] = -0.62 + (Math.random() - 0.5) * 0.06;
+      pos[i * 3] = -0.5 + (Math.random() - 0.5) * 0.06;
       pos[i * 3 + 1] = 0.74 + 0.02 + Math.random() * 0.06;
       pos[i * 3 + 2] = -0.2 + (Math.random() - 0.5) * 0.06;
 
@@ -201,7 +201,7 @@ export class FootstepsAndFilm {
     this.isEffervescing = true;
     this.effervescenceTime = 0;
     // Animate film dissolving into the water
-    this.edibleFilmGroup.position.set(-0.62, 0.74 + 0.08, -0.2);
+    this.edibleFilmGroup.position.set(-0.5, 0.74 + 0.08, -0.2);
   }
 
   public triggerConsumeFilm() {
