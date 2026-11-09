@@ -165,7 +165,7 @@ export class HandTracker {
         document.body.appendChild(this.video);
       }
 
-      this.video.srcObject = stream;
+      this.video.srcObject = this.stream;
       await this.video.play();
 
       // Wait until video has loaded enough data to read frames
