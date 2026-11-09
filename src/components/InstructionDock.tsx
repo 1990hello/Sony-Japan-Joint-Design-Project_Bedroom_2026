@@ -272,31 +272,21 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
             <div className="w-[min(320px,calc(100vw-5.5rem))] rounded-2xl border border-stone-700 bg-stone-950/95 p-4 shadow-2xl backdrop-blur-md">
               <div className="mb-3 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400">Quick guide</p>
-                  <h3 className="text-sm font-semibold text-stone-100">Move the orb</h3>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400">Orb controls</p>
+                  <h3 className="text-sm font-semibold text-stone-100">Two simple gestures</h3>
                 </div>
                 <button onClick={() => setIsGestureGuideOpen(false)} className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-800 hover:text-white" aria-label="Close gesture guide">
                   <ChevronDown className="h-4 w-4" />
                 </button>
               </div>
               <div className="space-y-3">
-                <div className="flex gap-3 rounded-xl border border-amber-500/25 bg-amber-950/25 p-3">
+                <div className="flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-950/25 p-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300"><Hand className="h-5 w-5" /></div>
-                  <div>
-                    <p className="text-xs font-bold text-amber-200">1. PINCH & HOLD</p>
-                    <p className="mt-1 text-xs leading-relaxed text-stone-200">Point at the orb. Bring your thumb and index finger together and keep them pinched as you move your hand. Release to let go.</p>
-                  </div>
+                  <p className="text-sm font-semibold text-amber-100">Pinch to move orb</p>
                 </div>
-                <div className="flex gap-3 rounded-xl border border-sky-500/25 bg-sky-950/25 p-3">
+                <div className="flex items-center gap-3 rounded-xl border border-sky-500/25 bg-sky-950/25 p-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-300"><Sparkles className="h-5 w-5" /></div>
-                  <div>
-                    <p className="text-xs font-bold text-sky-200">2. OPEN-PALM WAVE</p>
-                    <p className="mt-1 text-xs leading-relaxed text-stone-200">Release the pinch, open your hand, then wave left and right. The orb returns to the glowing dock.</p>
-                  </div>
-                </div>
-                <div className="flex gap-2 rounded-lg bg-stone-800/80 p-3 text-xs leading-relaxed text-stone-300">
-                  <MousePointer2 className="mt-0.5 h-4 w-4 shrink-0 text-stone-400" />
-                  <p><strong className="text-stone-100">Mouse:</strong> Click and hold the orb, move it, then release. Press <strong className="text-amber-200">Return Orb to Dock</strong>.</p>
+                  <p className="text-sm font-semibold text-sky-100">Wave to send orb back to docking station</p>
                 </div>
               </div>
             </div>
