@@ -15,6 +15,8 @@ export class BedroomEnvironment {
   public windowLight!: THREE.DirectionalLight;
   public doorSpillLight!: THREE.PointLight;
   public waterGlassMesh!: THREE.Mesh;
+  public waterGlassHalo!: THREE.Mesh;
+  private waterGlassHaloTime: number = 0;
   public waterLiquidMesh!: THREE.Mesh;
   public deskSurfaceY: number = 0.74;
 
@@ -629,7 +631,30 @@ export class BedroomEnvironment {
     meniscusMesh.position.set(0, 0.088, 0);
     glassGroup.add(meniscusMesh);
 
+    // Halo stays fully hidden until the edible-film interaction becomes available.
+    const haloGeo = new THREE.TorusGeometry(0.058, 0.0025, 8, 64);
+    const haloMat = new THREE.MeshBasicMaterial({
+      color: 0xe7c2ff,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    this.waterGlassHalo = new THREE.Mesh(haloGeo, haloMat);
+    this.waterGlassHalo.rotation.x = -Math.PI / 2;
+    this.waterGlassHalo.position.set(0, 0.094, 0);
+    glassGroup.add(this.waterGlassHalo);
+
     this.group.add(glassGroup);
+  }
+
+  public updateWaterGlassHalo(delta: number, active: boolean) {
+    this.waterGlassHaloTime += delta;
+    const pulse = 0.5 + 0.5 * Math.sin(this.waterGlassHaloTime * 3.2);
+    const material = this.waterGlassHalo.material as THREE.MeshBasicMaterial;
+    material.opacity = active ? 0.38 + pulse * 0.42 : 0;
+    const scale = 1 + pulse * 0.12;
+    this.waterGlassHalo.scale.set(scale, scale, scale);
   }
 
   private setupLighting() {
