@@ -10,7 +10,7 @@ import { NavigationDock } from './components/NavigationDock';
 import { IntroOverlay } from './components/IntroOverlay';
 import { HandIndicator } from './components/HandIndicator';
 import { HandDebugPanel } from './components/HandDebugPanel';
-import { HandTracker, HandGestureState, HandTrackerStatus } from './services/HandTracker';
+import { aquariumHandTracker, HandGestureState, HandTrackerStatus } from './services/HandTracker';
 import { ExperienceMoment, CameraPreset } from './types';
 import { soundEngine } from './audio/SoundEngine';
 import { getSharedCameraStream } from '../shared/sharedCamera';
@@ -98,7 +98,8 @@ export default function App() {
 
   // Initialize HandTracker service
   useEffect(() => {
-    const tracker = new HandTracker({
+    const tracker = aquariumHandTracker;
+    tracker.setCallbacks({
       onGestureState: (state) => {
         setHandState(state);
         if (state.isHandDetected && currentMomentRef.current === 1) {
@@ -153,7 +154,10 @@ export default function App() {
     }
 
     return () => {
-      tracker.dispose();
+      // Stop the frame loop and detach the video, but retain the loaded
+      // HandLandmarker/WASM runtime for the next visit to Aquarium.
+      tracker.stopTracking(false);
+      tracker.setCallbacks({});
       handTrackerRef.current = null;
     };
   }, [showToast, isPointOverEnterButton, handleSelectMoment]);

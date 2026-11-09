@@ -445,8 +445,12 @@ export class HandTracker {
     this.smoothedY = null;
     this.smoothedDist = null;
 
+    // Always leave a restartable state, even when a scene unmounts silently.
     if (notify) {
       this.setStatus('stopped', 'Hand tracking paused');
+    } else {
+      this.status = 'stopped';
+      this.statusMessage = 'Hand tracking paused';
     }
   }
 
@@ -486,3 +490,9 @@ export class HandTracker {
     this.status = 'idle';
   }
 }
+
+
+// Keep the Aquarium MediaPipe runtime alive across scene switches. Recreating
+// a HandLandmarker after closing its Emscripten runtime can trigger noExitRuntime
+// errors, so the application reuses this tracker for the lifetime of the page.
+export const aquariumHandTracker = new HandTracker();
