@@ -15,6 +15,7 @@ export class FootstepsAndFilm {
   // Edible film
   public edibleFilmGroup: THREE.Group;
   public edibleFilmMesh!: THREE.Mesh;
+  public edibleFilmHitArea!: THREE.Mesh;
   // Edible film rests just beyond the printer slot at the centered, far-side dock.
   public filmInitialPos = new THREE.Vector3(0, 0.74 + 0.024, -0.2 + 0.14);
   public isFilmPrinted: boolean = false;
@@ -129,6 +130,21 @@ export class FootstepsAndFilm {
     const filmGeo = new THREE.BoxGeometry(0.052, 0.0006, 0.038);
     this.edibleFilmMesh = new THREE.Mesh(filmGeo, filmMat);
     this.edibleFilmGroup.add(this.edibleFilmMesh);
+
+    // Invisible, slightly larger interaction surface makes hand pinching practical
+    // without changing the visible dimensions of the edible film.
+    const hitGeo = new THREE.PlaneGeometry(0.12, 0.10);
+    const hitMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      colorWrite: false,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    this.edibleFilmHitArea = new THREE.Mesh(hitGeo, hitMat);
+    this.edibleFilmHitArea.rotation.x = -Math.PI / 2;
+    this.edibleFilmHitArea.position.y = 0.001;
+    this.edibleFilmGroup.add(this.edibleFilmHitArea);
 
     // Subtle golden nutritional micro-grid line pattern
     const lineMat = new THREE.LineBasicMaterial({ color: 0xe6b870, transparent: true, opacity: 0.5 });
