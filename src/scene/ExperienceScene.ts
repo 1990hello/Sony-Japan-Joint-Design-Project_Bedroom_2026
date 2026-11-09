@@ -55,6 +55,9 @@ export class ExperienceScene {
   private pointerNorm = new THREE.Vector2();
   private isPointerDown: boolean = false;
   private planeIntersect = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.08);
+  // Film is dragged across the horizontal desk surface, not an arbitrary screen-space plane.
+  private filmDragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.764);
+  private waterTargetPosition = new THREE.Vector3(-0.5, 0.828, -0.2);
   private raycastHitPos = new THREE.Vector3();
 
   // Gesture Tracking
@@ -256,6 +259,37 @@ export class ExperienceScene {
     this.renderer.setSize(w, h);
   };
 
+  private isPointerOverEdibleFilm(): boolean {
+    if (!this.footstepsAndFilm.edibleFilmGroup.visible) return false;
+    this.footstepsAndFilm.edibleFilmGroup.updateMatrixWorld(true);
+    this.raycaster.setFromCamera(this.pointerNorm, this.camera);
+    return this.raycaster.intersectObject(this.footstepsAndFilm.edibleFilmHitArea, false).length > 0;
+  }
+
+  private moveEdibleFilmWithPointer(): boolean {
+    this.raycaster.setFromCamera(this.pointerNorm, this.camera);
+    if (!this.raycaster.ray.intersectPlane(this.filmDragPlane, this.raycastHitPos)) return false;
+
+    // Keep the film on the tabletop and within the usable desk area.
+    this.raycastHitPos.x = THREE.MathUtils.clamp(this.raycastHitPos.x, -0.78, 0.78);
+    this.raycastHitPos.z = THREE.MathUtils.clamp(this.raycastHitPos.z, -0.36, 0.42);
+    this.footstepsAndFilm.edibleFilmGroup.position.set(
+      this.raycastHitPos.x,
+      this.footstepsAndFilm.filmInitialPos.y,
+      this.raycastHitPos.z
+    );
+    return true;
+  }
+
+  private isEdibleFilmOverWater(): boolean {
+    const filmPos = this.footstepsAndFilm.edibleFilmGroup.position;
+    const distanceXZ = Math.hypot(
+      filmPos.x - this.waterTargetPosition.x,
+      filmPos.z - this.waterTargetPosition.z
+    );
+    return distanceXZ < 0.105;
+  }
+
   private onPointerMove = (e: PointerEvent) => {
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.pointerNorm.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -279,18 +313,10 @@ export class ExperienceScene {
       }
     }
 
-    // Dragging Edible Film in Stage 3
-    if (this.footstepsAndFilm.isFilmGrabbed) {
-      this.raycaster.setFromCamera(this.pointerNorm, this.camera);
-      if (this.raycaster.ray.intersectPlane(this.planeIntersect, this.raycastHitPos)) {
-        this.raycastHitPos.y = THREE.MathUtils.clamp(this.raycastHitPos.y, 0.74 + 0.01, 1.1);
-        this.footstepsAndFilm.edibleFilmGroup.position.copy(this.raycastHitPos);
-
-        // Check if dragged over water glass (x: -0.34, z: 0.12)
-        const dToWater = this.raycastHitPos.distanceTo(new THREE.Vector3(-0.34, 0.74 + 0.08, 0.12));
-        if (dToWater < 0.12) {
-          this.triggerDissolveRitual();
-        }
+    // Dragging Edible Film across the actual horizontal desk plane.
+    if (this.footstepsAndFilm.isFilmGrabbed && this.moveEdibleFilmWithPointer()) {
+      if (this.isEdibleFilmOverWater()) {
+        this.triggerDissolveRitual();
       }
     }
   };
@@ -314,10 +340,9 @@ export class ExperienceScene {
 
     // Check click on Edible Film during Stage 3 takeaway ritual
     if (this.footstepsAndFilm.isFilmPrinted && !this.footstepsAndFilm.isFilmConsumed && !this.footstepsAndFilm.isFilmDissolved) {
-      const filmIntersects = this.raycaster.intersectObject(this.footstepsAndFilm.edibleFilmMesh);
-      if (filmIntersects.length > 0) {
+      if (this.isPointerOverEdibleFilm()) {
         this.footstepsAndFilm.isFilmGrabbed = true;
-        this.callbacks.onInstructionChange('Choose ritual: Drag to water glass to dissolve, or click "Eat Film".');
+        this.callbacks.onInstructionChange('Drag the film to the water glass to dissolve it, or choose "Eat Film".');
       }
     }
   };
@@ -343,9 +368,7 @@ export class ExperienceScene {
     // Releasing Edible Film
     if (this.footstepsAndFilm.isFilmGrabbed) {
       this.footstepsAndFilm.isFilmGrabbed = false;
-      const filmPos = this.footstepsAndFilm.edibleFilmGroup.position;
-      const dToWater = filmPos.distanceTo(new THREE.Vector3(-0.34, 0.74 + 0.08, 0.12));
-      if (dToWater < 0.14) {
+      if (this.isEdibleFilmOverWater()) {
         this.triggerDissolveRitual();
       }
     }
@@ -407,24 +430,25 @@ export class ExperienceScene {
       }
     }
 
-    // 3. Pinching to grab edible film
+    // 3. Pinch the edible film only when the tracked cursor is over its hit area.
     if (this.footstepsAndFilm.isFilmPrinted && !this.footstepsAndFilm.isFilmConsumed && !this.footstepsAndFilm.isFilmDissolved) {
-      if (state.isPinching && !this.previousPinch) {
-        this.footstepsAndFilm.isFilmGrabbed = true;
+      if (state.isPinching && !this.previousPinch && !this.footstepsAndFilm.isFilmGrabbed) {
+        if (this.isPointerOverEdibleFilm()) {
+          this.footstepsAndFilm.isFilmGrabbed = true;
+          this.callbacks.onInstructionChange('Move the film over the water glass to dissolve it, or release it to keep it.');
+        }
       } else if (!state.isPinching && this.previousPinch && this.footstepsAndFilm.isFilmGrabbed) {
         this.footstepsAndFilm.isFilmGrabbed = false;
-        const filmPos = this.footstepsAndFilm.edibleFilmGroup.position;
-        const dToWater = filmPos.distanceTo(new THREE.Vector3(-0.34, 0.74 + 0.08, 0.12));
-        if (dToWater < 0.15) {
+        if (this.isEdibleFilmOverWater()) {
           this.triggerDissolveRitual();
         }
       }
 
       if (this.footstepsAndFilm.isFilmGrabbed) {
-        const targetX = ndcX * 0.4;
-        const targetY = 0.74 + 0.15 + ndcY * 0.2;
-        const targetZ = 0.12;
-        this.footstepsAndFilm.edibleFilmGroup.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.2);
+        this.moveEdibleFilmWithPointer();
+        if (this.isEdibleFilmOverWater()) {
+          this.triggerDissolveRitual();
+        }
       }
     }
 
