@@ -266,8 +266,9 @@ export class FootstepsAndFilm {
     this.onFilmPrintComplete = onComplete;
     this.edibleFilmGroup.visible = true;
 
-    // Begin just inside the printer slot, then extrude the circular film onto the desk.
-    this.filmPrintStart.set(0, 0.74 + 0.024, -0.23 + 0.09);
+    // Align the film's leading centre with the printer mouth (dock z + hatch front face),
+    // then extrude it forward onto the tabletop.
+    this.filmPrintStart.set(0, 0.74 + 0.024, -0.23 + 0.114 + 0.004);
     this.edibleFilmGroup.position.copy(this.filmPrintStart);
     this.edibleFilmGroup.scale.set(0.72, 0.72, 0.72);
     (this.edibleFilmMesh.material as THREE.MeshPhysicalMaterial).opacity = 0.15;
