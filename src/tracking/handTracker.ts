@@ -226,33 +226,41 @@ export class HandTracker {
     const isPinkyExtended = landmarks[20].y < landmarks[18].y;
     const isOpenPalm = isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended && !isPinching;
 
-    // Wave detection: horizontal oscillating movement
+    // Wave detection: require a clearly open hand and deliberate side-to-side travel.
+    // Small tracking jitter is not enough to trigger the docking command.
     const now = performance.now();
-    this.xHistory.push(rawX);
-    this.prevTimes.push(now);
-    while (this.prevTimes.length > 0 && now - this.prevTimes[0] > 1200) {
-      this.prevTimes.shift();
-      this.xHistory.shift();
-    }
-
     let isWaving = false;
-    if (this.xHistory.length > 8 && isOpenPalm) {
-      let directionChanges = 0;
-      let lastDir = 0;
-      for (let i = 1; i < this.xHistory.length; i++) {
-        const diff = this.xHistory[i] - this.xHistory[i - 1];
-        if (Math.abs(diff) > 0.012) {
-          const dir = Math.sign(diff);
-          if (lastDir !== 0 && dir !== lastDir) {
-            directionChanges++;
+    if (isOpenPalm) {
+      this.xHistory.push(rawX);
+      this.prevTimes.push(now);
+      while (this.prevTimes.length > 0 && now - this.prevTimes[0] > 1000) {
+        this.prevTimes.shift();
+        this.xHistory.shift();
+      }
+
+      if (this.xHistory.length > 12 && now - this.lastWaveTime > 1500) {
+        const horizontalSpan = Math.max(...this.xHistory) - Math.min(...this.xHistory);
+        let directionChanges = 0;
+        let lastDir = 0;
+        for (let i = 1; i < this.xHistory.length; i++) {
+          const diff = this.xHistory[i] - this.xHistory[i - 1];
+          if (Math.abs(diff) > 0.025) {
+            const dir = Math.sign(diff);
+            if (lastDir !== 0 && dir !== lastDir) directionChanges++;
+            lastDir = dir;
           }
-          lastDir = dir;
+        }
+        if (horizontalSpan > 0.16 && directionChanges >= 3) {
+          isWaving = true;
+          this.lastWaveTime = now;
+          this.xHistory = [];
+          this.prevTimes = [];
         }
       }
-      if (directionChanges >= 2) {
-        isWaving = true;
-        this.lastWaveTime = now;
-      }
+    } else {
+      // Only continuous open-palm movement can form a wave.
+      this.xHistory = [];
+      this.prevTimes = [];
     }
 
     // Swipe detection: rapid unidirectional horizontal movement
@@ -277,7 +285,7 @@ export class HandTracker {
       handY: rawY,
       isPinching,
       pinchDistance: pinchDist,
-      isWaving: isWaving || (now - this.lastWaveTime < 600),
+      isWaving,
       isOpenPalm,
       isSwiping,
       swipeDirection,
