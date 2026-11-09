@@ -466,6 +466,28 @@ export class ExperienceScene {
     };
   }
 
+  /**
+   * Stage 2: Bring the encouragement message into a readable close-up.
+   * The message sits 24 cm above the orb, so aim at the text rather than the orb.
+   */
+  private zoomToEncouragement(holdDuration: number) {
+    const orbPos = this.dockAndOrb.orbGroup.position.clone();
+    const textLook = orbPos.clone().add(new THREE.Vector3(0, 0.24, 0.05));
+    const targetZoomPos = textLook.clone().add(new THREE.Vector3(0, 0, 0.30));
+
+    this.cameraAnimation = {
+      mode: 'in',
+      startPos: this.camera.position.clone(),
+      targetPos: targetZoomPos,
+      startLook: this.cameraLookTarget.clone(),
+      targetLook: textLook,
+      duration: 1.8,
+      elapsed: 0,
+      holdDuration,
+      holdTimer: 0,
+    };
+  }
+
   // ================= STAGE 1: ACKNOWLEDGEMENT =================
 
   public triggerStartWave() {
@@ -555,6 +577,8 @@ export class ExperienceScene {
           this.callbacks.onNarrationSubtitle(this.threadsEffect.fullMessage);
 
           this.threadsEffect.startPhaseC_WeavingWords();
+          // Keep the encouragement panel close and centred while it is narrated.
+          this.zoomToEncouragement(6.5);
 
           // Weaving animation progress linked with speech
           let writeProgress = 0;
