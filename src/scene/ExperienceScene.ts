@@ -333,7 +333,7 @@ export class ExperienceScene {
       if (orbIntersects.length > 0) {
         this.dockAndOrb.isGrabbed = true;
         this.dockAndOrb.setDocked(false);
-        this.callbacks.onInstructionChange('Pinch and move the orb. Release it near the docking station to dock it.');
+        this.callbacks.onInstructionChange('Drag the orb to move it. Wave your hand to send it back to the docking station.');
         return;
       }
     }
@@ -350,19 +350,10 @@ export class ExperienceScene {
   private onPointerUp = () => {
     this.isPointerDown = false;
 
-    // Releasing Orb in Stage 3
+    // Releasing the orb only stops dragging. A hand wave is the docking command.
     if (this.dockAndOrb.isGrabbed) {
       this.dockAndOrb.isGrabbed = false;
-
-      // Check distance to docking cradle (0.25, 0.74, 0.08)
-      const distToDock = this.dockAndOrb.orbGroup.position.distanceTo(this.dockAndOrb.dockPosition);
-      if (distToDock < 0.22) {
-        // Dock the orb!
-        this.dockTheOrb();
-      } else {
-        // Let it gently float back toward hover target
-        this.dockAndOrb.currentOrbTarget.copy(this.dockAndOrb.orbGroup.position);
-      }
+      this.dockAndOrb.currentOrbTarget.copy(this.dockAndOrb.orbGroup.position);
     }
 
     // Releasing Edible Film
@@ -401,22 +392,25 @@ export class ExperienceScene {
 
     // 2. Pinching to Grab Orb in Stage 3
     if (this.currentStage === 'stage3_closure' && this.currentSubstate === 'orb_free_interaction') {
-      if (state.isPinching && !this.previousPinch) {
-        // Pinch only picks up the orb; docking is evaluated when the pinch is released.
-        this.dockAndOrb.isGrabbed = true;
-        this.dockAndOrb.setDocked(false);
+      if (state.isPinching && !this.previousPinch && !this.dockAndOrb.isGrabbed) {
+        // Only pick up the orb when the pinch cursor is actually over it.
+        this.dockAndOrb.orbGroup.updateMatrixWorld(true);
+        const orbHit = this.raycaster.intersectObject(this.dockAndOrb.outerGlassOrb, false);
+        if (orbHit.length > 0) {
+          this.dockAndOrb.isGrabbed = true;
+          this.dockAndOrb.setDocked(false);
+        }
       } else if (!state.isPinching && this.previousPinch) {
-        // Release docks the orb only when it is physically close to the docking cradle.
+        // Releasing the pinch leaves the orb hovering where it was released.
         if (this.dockAndOrb.isGrabbed) {
           this.dockAndOrb.isGrabbed = false;
-          const distToDock = this.dockAndOrb.orbGroup.position.distanceTo(this.dockAndOrb.dockPosition);
-          if (distToDock < 0.24) {
-            this.dockTheOrb();
-          } else {
-            // Keep the orb hovering where the user released it.
-            this.dockAndOrb.currentOrbTarget.copy(this.dockAndOrb.orbGroup.position);
-          }
+          this.dockAndOrb.currentOrbTarget.copy(this.dockAndOrb.orbGroup.position);
         }
+      }
+
+      // A deliberate wave sends the orb back to its docking station.
+      if (state.isWaving && !this.previousWave && !this.dockAndOrb.isGrabbed) {
+        this.dockTheOrb();
       }
 
       // While pinching, the orb follows the tracked hand.
