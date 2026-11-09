@@ -116,18 +116,18 @@ export class BedroomEnvironment {
     this.group.add(leftWall);
 
     // Right Wall (x = 3.5) with Doorway Opening
-    const rightWall1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3.2, 4.0), wallMat);
-    rightWall1.position.set(3.5, 1.6, -0.5);
+    const rightWall1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3.2, 5.0), wallMat);
+    rightWall1.position.set(3.5, 1.6, -1.0);
     rightWall1.receiveShadow = true;
     this.group.add(rightWall1);
 
-    const rightWall2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3.2, 1.5), wallMat);
-    rightWall2.position.set(3.5, 1.6, -4.8);
+    const rightWall2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3.2, 0.8), wallMat);
+    rightWall2.position.set(3.5, 1.6, -5.1);
     rightWall2.receiveShadow = true;
     this.group.add(rightWall2);
 
     const rightWallLintel = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 1.4), wallMat);
-    rightWallLintel.position.set(3.5, 2.75, -3.3);
+    rightWallLintel.position.set(3.5, 2.75, -4.1);
     this.group.add(rightWallLintel);
 
     // Subtle Baseboards
@@ -424,7 +424,8 @@ export class BedroomEnvironment {
   private buildDoorway() {
     // Bedroom Doorway at right wall (x = 3.5, z = -3.3, width 1.2m, height 2.3m)
     const doorGroup = new THREE.Group();
-    doorGroup.position.set(3.48, 0, -3.3);
+    // Shift the doorway toward the back corner, closer to the window.
+    doorGroup.position.set(3.48, 0, -4.1);
 
     // Door Frame (Oak trim)
     const frameMat = new THREE.MeshStandardMaterial({
@@ -482,7 +483,9 @@ export class BedroomEnvironment {
   private buildDecorAndPlant() {
     // Indoor Potted Plant (Monstera / Fiddle Leaf) in the corner near window
     const plantGroup = new THREE.Group();
-    plantGroup.position.set(2.9, 0, -4.6);
+    // Place a compact plant directly below the window sill.
+    plantGroup.position.set(2.2, 0, -4.95);
+    plantGroup.scale.setScalar(0.38);
 
     // Ceramic textured pot
     const potMat = new THREE.MeshStandardMaterial({
