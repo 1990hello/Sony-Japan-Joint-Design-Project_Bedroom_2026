@@ -758,6 +758,13 @@ export class ExperienceScene {
       this.dockAndOrb.update(delta, this.camera.position);
       this.threadsEffect.update(delta, orbPos, this.camera.position);
       this.footstepsAndFilm.update(delta);
+      // Show the cup halo at exactly the same interaction stage as the film halo.
+      const ritualPromptActive = this.footstepsAndFilm.isFilmPrinted &&
+        !this.footstepsAndFilm.isFilmGrabbed &&
+        !this.footstepsAndFilm.isFilmConsumed &&
+        !this.footstepsAndFilm.isFilmDissolved &&
+        !this.footstepsAndFilm.isFilmPrinting;
+      this.bedroom.updateWaterGlassHalo(delta, ritualPromptActive);
 
       this.renderer.render(this.scene, this.camera);
 
