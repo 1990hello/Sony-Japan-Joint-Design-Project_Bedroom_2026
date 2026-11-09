@@ -290,7 +290,9 @@ export class ExperienceScene {
       filmPos.x - this.waterTargetPosition.x,
       filmPos.z - this.waterTargetPosition.z
     );
-    return distanceXZ < 0.11;
+    // Use a generous invisible drop zone around the glass so the film registers
+    // without requiring pixel-perfect placement. The visible cup remains unchanged.
+    return distanceXZ < 0.18;
   }
 
   private onPointerMove = (e: PointerEvent) => {
