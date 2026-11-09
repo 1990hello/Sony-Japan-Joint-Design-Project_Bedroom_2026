@@ -1,141 +1,181 @@
 /**
- * EXORA Stage 2: Threads of Encouragement
- * Simulates lingering black worry threads, luminous golden writing threads,
- * synchronized progressive text reveal, and thread dissolution upon voice completion.
+ * EXORA Stage 2: Golden Threads Weaving & Black Thread Dissolution
+ * 
+ * Choreography:
+ * Phase A — Golden threads emerge from orb, brief 1.5s orbit of anticipation.
+ * Phase B — Golden threads stream downwards toward the docking station, physically passing through the black tethers, dissolving them progressively from top to bottom.
+ * Phase C — Golden threads rise into the air above the orb to weave the words of encouragement along letter paths, synchronized with voice narration.
  */
 
 import * as THREE from 'three';
+
+export type Stage2Phase = 'idle' | 'black_tethers_active' | 'golden_orbit' | 'golden_dissolving_downwards' | 'golden_weaving_words' | 'settled';
 
 export class ThreadsEffect {
   public group: THREE.Group;
   private blackThreadsGroup: THREE.Group;
   private goldenThreadsGroup: THREE.Group;
+  private descendingGoldenGroup: THREE.Group;
   private textCanvasMesh!: THREE.Mesh;
   private textCanvas!: HTMLCanvasElement;
   private textTexture!: THREE.CanvasTexture;
   private tracerParticle!: THREE.Mesh;
+  private weavingStrands: THREE.Line[] = [];
 
-  public isStage2Active: boolean = false;
-  public blackThreadsVisible: boolean = false;
-  public goldenThreadsActive: boolean = false;
-  public isDissolving: boolean = false;
-  public isCompleted: boolean = false;
-
-  private blackCurves: THREE.Line[] = [];
-  private goldenCurves: THREE.Line[] = [];
+  // Dissolution particles & contact glow
   private dissolutionParticles!: THREE.Points;
+  private goldenDissolutionRing!: THREE.Mesh;
 
-  private progressTime: number = 0;
-  private textRevealFraction: number = 0; // 0 to 1
-  private dissolutionProgress: number = 0; // 0 to 1
+  public currentPhase: Stage2Phase = 'idle';
+  private phaseTimer: number = 0;
+
+  // Geometry references
+  private blackStrands: { line: THREE.Line; basePoints: THREE.Vector3[] }[] = [];
+  private descendingStrands: THREE.Line[] = [];
+  private orbitCurves: THREE.Line[] = [];
 
   public readonly fullMessage = "You've put in so much effort, and it really shows. Take a moment to be proud — you've done more than you think.";
+  private textRevealFraction: number = 0;
+
+  private onPhaseBComplete?: () => void;
+  private onWeavingComplete?: () => void;
 
   constructor() {
     this.group = new THREE.Group();
     this.blackThreadsGroup = new THREE.Group();
     this.goldenThreadsGroup = new THREE.Group();
+    this.descendingGoldenGroup = new THREE.Group();
 
     this.group.add(this.blackThreadsGroup);
     this.group.add(this.goldenThreadsGroup);
+    this.group.add(this.descendingGoldenGroup);
 
-    this.buildBlackThreads();
-    this.buildGoldenThreads();
-    this.buildTextDisplay();
+    this.buildBlackTethers();
+    this.buildGoldenOrbitStrands();
+    this.buildDescendingGoldenStrands();
+    this.buildTextDisplayAndWeavers();
     this.buildDissolutionParticles();
 
     this.group.visible = false;
   }
 
-  private buildBlackThreads() {
-    // Clean tether-like strands connecting the docking station to the orb's underside.
-    // The thread group origin follows the orb centre, so these coordinates are local to it.
+  /**
+   * Black tethers connecting dock to orb underside
+   */
+  private buildBlackTethers() {
     const blackMat = new THREE.LineBasicMaterial({
-      color: 0x111010,
+      color: 0x161514,
       linewidth: 2,
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.9,
     });
 
     const strandCount = 8;
-    const dockY = -0.195; // upper surface of the docking station, relative to orb centre
-    const orbUndersideY = -0.068; // just inside the orb's lower edge
-    const dockRadius = 0.055;
-    const orbRadius = 0.032;
+    const dockY = -0.195; // Docking station surface (local to orb center)
+    const orbUndersideY = -0.068; // Underside of orb
+    const dockRadius = 0.056;
+    const orbRadius = 0.034;
 
     for (let i = 0; i < strandCount; i++) {
       const angle = (i / strandCount) * Math.PI * 2;
-      const points: THREE.Vector3[] = [];
+      const pts: THREE.Vector3[] = [];
 
-      // Nearly straight, gently tensioned strands; avoid loops or crossings around the orb.
-      for (let step = 0; step <= 12; step++) {
-        const t = step / 12;
-        const radius = THREE.MathUtils.lerp(dockRadius, orbRadius, t);
+      for (let s = 0; s <= 20; s++) {
+        const t = s / 20; // 0 = dock, 1 = orb
+        const r = THREE.MathUtils.lerp(dockRadius, orbRadius, t);
         const y = THREE.MathUtils.lerp(dockY, orbUndersideY, t);
-        const subtleBow = Math.sin(t * Math.PI) * 0.003;
-
-        points.push(new THREE.Vector3(
-          Math.cos(angle) * (radius + subtleBow),
-          y,
-          Math.sin(angle) * (radius + subtleBow)
-        ));
+        const bow = Math.sin(t * Math.PI) * 0.003;
+        pts.push(new THREE.Vector3(Math.cos(angle) * (r + bow), y, Math.sin(angle) * (r + bow)));
       }
 
-      const curve = new THREE.CatmullRomCurve3(points);
-      const geometry = new THREE.BufferGeometry().setFromPoints(curve.getPoints(24));
-      const line = new THREE.Line(geometry, blackMat);
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geo, blackMat.clone());
       this.blackThreadsGroup.add(line);
-      this.blackCurves.push(line);
+      this.blackStrands.push({ line, basePoints: pts });
     }
   }
 
-  private buildGoldenThreads() {
+  /**
+   * Phase A: Brief golden orbit around orb
+   */
+  private buildGoldenOrbitStrands() {
     const goldMat = new THREE.LineBasicMaterial({
-      color: 0xffd277,
+      color: 0xffdf80,
       linewidth: 2.5,
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.9,
       blending: THREE.AdditiveBlending,
     });
 
-    for (let g = 0; g < 8; g++) {
-      const points: THREE.Vector3[] = [];
-      const steps = 40;
-      const radiusBase = 0.095 + g * 0.012;
-      const angleOffset = (g / 8) * Math.PI * 2;
+    for (let g = 0; g < 6; g++) {
+      const pts: THREE.Vector3[] = [];
+      const steps = 36;
+      const r = 0.088 + g * 0.008;
+      const angleOffset = (g / 6) * Math.PI * 2;
 
       for (let s = 0; s <= steps; s++) {
         const theta = (s / steps) * Math.PI * 2.2 + angleOffset;
-        const y = Math.sin(s * 0.3 + g) * 0.08;
-        const r = radiusBase + Math.cos(s * 0.5) * 0.015;
-        const x = r * Math.cos(theta);
-        const z = r * Math.sin(theta);
-        points.push(new THREE.Vector3(x, y, z));
+        const y = Math.sin(s * 0.35 + g) * 0.06;
+        pts.push(new THREE.Vector3(r * Math.cos(theta), y, r * Math.sin(theta)));
       }
 
-      const curve = new THREE.CatmullRomCurve3(points);
-      const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(50));
+      const curve = new THREE.CatmullRomCurve3(pts);
+      const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(40));
       const line = new THREE.Line(geo, goldMat);
       this.goldenThreadsGroup.add(line);
-      this.goldenCurves.push(line);
+      this.orbitCurves.push(line);
     }
+  }
 
-    // Luminous tracer particle acting as the physical "pen" tip
-    const tracerGeo = new THREE.SphereGeometry(0.007, 16, 16);
-    const tracerMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+  /**
+   * Phase B: Descending golden strands flowing downwards to dissolve black tethers
+   */
+  private buildDescendingGoldenStrands() {
+    const goldMat = new THREE.LineBasicMaterial({
+      color: 0xffe699,
+      linewidth: 3,
       transparent: true,
       opacity: 0.95,
       blending: THREE.AdditiveBlending,
     });
-    this.tracerParticle = new THREE.Mesh(tracerGeo, tracerMat);
-    this.goldenThreadsGroup.add(this.tracerParticle);
+
+    // 8 golden streams flowing down along each black tether
+    for (let i = 0; i < 8; i++) {
+      const pts = [
+        new THREE.Vector3(0, -0.06, 0),
+        new THREE.Vector3(0, -0.09, 0),
+        new THREE.Vector3(0, -0.14, 0),
+        new THREE.Vector3(0, -0.20, 0),
+      ];
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geo, goldMat);
+      this.descendingGoldenGroup.add(line);
+      this.descendingStrands.push(line);
+    }
+
+    // Luminous golden ring that travels downward at the contact dissolution boundary
+    const ringGeo = new THREE.TorusGeometry(0.046, 0.003, 12, 32);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xfff0aa,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+    });
+    this.goldenDissolutionRing = new THREE.Mesh(ringGeo, ringMat);
+    this.goldenDissolutionRing.rotation.x = Math.PI / 2;
+    this.goldenDissolutionRing.position.set(0, -0.068, 0);
+    this.descendingGoldenGroup.add(this.goldenDissolutionRing);
+
+    this.descendingGoldenGroup.visible = false;
   }
 
-  private buildTextDisplay() {
+  /**
+   * Phase C: 3D Text Display and golden weaving strands
+   */
+  private buildTextDisplayAndWeavers() {
     this.textCanvas = document.createElement('canvas');
     this.textCanvas.width = 1024;
-    this.textCanvas.height = 384;
+    this.textCanvas.height = 420;
     this.textTexture = new THREE.CanvasTexture(this.textCanvas);
     this.textTexture.colorSpace = THREE.SRGBColorSpace;
 
@@ -147,39 +187,69 @@ export class ThreadsEffect {
       side: THREE.DoubleSide,
     });
 
-    // Billboard placed right in front/above the orb in 3D space
-    const planeGeo = new THREE.PlaneGeometry(0.36, 0.14);
+    // Positioned in air above the orb
+    const planeGeo = new THREE.PlaneGeometry(0.38, 0.16);
     this.textCanvasMesh = new THREE.Mesh(planeGeo, textMat);
-    this.textCanvasMesh.position.set(0, 0.25, 0.06);
+    this.textCanvasMesh.position.set(0, 0.24, 0.05);
     this.group.add(this.textCanvasMesh);
+
+    // Tracer pen tip particle
+    const tracerGeo = new THREE.SphereGeometry(0.008, 16, 16);
+    const tracerMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.98,
+      blending: THREE.AdditiveBlending,
+    });
+    this.tracerParticle = new THREE.Mesh(tracerGeo, tracerMat);
+    this.tracerParticle.position.set(0, 0.24, 0.06);
+    this.group.add(this.tracerParticle);
+
+    // 4 undulating golden weaving strands that dance around the writing pen
+    const strandMat = new THREE.LineBasicMaterial({
+      color: 0xffd277,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+    });
+
+    for (let i = 0; i < 4; i++) {
+      const pts = [
+        new THREE.Vector3(-0.16, 0.24, 0.04),
+        new THREE.Vector3(-0.08, 0.26, 0.05),
+        new THREE.Vector3(0.08, 0.22, 0.05),
+        new THREE.Vector3(0.16, 0.24, 0.04),
+      ];
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geo, strandMat);
+      this.group.add(line);
+      this.weavingStrands.push(line);
+    }
   }
 
   private buildDissolutionParticles() {
-    const count = 300;
+    const count = 180;
     const geo = new THREE.BufferGeometry();
     const pos = new Float32Array(count * 3);
     const vels = new Float32Array(count * 3);
 
     for (let i = 0; i < count; i++) {
-      const u = Math.random();
-      const r = 0.08 + Math.random() * 0.06;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
+      const angle = Math.random() * Math.PI * 2;
+      const r = 0.035 + Math.random() * 0.025;
+      pos[i * 3] = Math.cos(angle) * r;
+      pos[i * 3 + 1] = -0.068 - Math.random() * 0.12;
+      pos[i * 3 + 2] = Math.sin(angle) * r;
 
-      pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      pos[i * 3 + 2] = r * Math.cos(phi);
-
-      vels[i * 3] = (Math.random() - 0.5) * 0.08;
-      vels[i * 3 + 1] = 0.04 + Math.random() * 0.08;
-      vels[i * 3 + 2] = (Math.random() - 0.5) * 0.08;
+      vels[i * 3] = (Math.random() - 0.5) * 0.04;
+      vels[i * 3 + 1] = 0.02 + Math.random() * 0.04;
+      vels[i * 3 + 2] = (Math.random() - 0.5) * 0.04;
     }
 
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('velocity', new THREE.BufferAttribute(vels, 3));
 
     const mat = new THREE.PointsMaterial({
-      color: 0xffdca8,
+      color: 0xffdfaa,
       size: 0.005,
       transparent: true,
       opacity: 0.0,
@@ -191,9 +261,12 @@ export class ThreadsEffect {
     this.group.add(this.dissolutionParticles);
   }
 
+  /**
+   * Render progressively woven text on canvas
+   */
   public renderText(revealProgress: number) {
     const ctx = this.textCanvas.getContext('2d')!;
-    ctx.clearRect(0, 0, 1024, 384);
+    ctx.clearRect(0, 0, 1024, 420);
 
     if (revealProgress <= 0.01) {
       this.textTexture.needsUpdate = true;
@@ -206,10 +279,10 @@ export class ThreadsEffect {
 
     ctx.save();
 
-    // Subtle dark glow backdrop for crystal clear readability in 3D
+    // Dark soft background capsule
     ctx.fillStyle = 'rgba(18, 16, 14, 0.45)';
     ctx.beginPath();
-    ctx.roundRect(40, 20, 944, 344, 24);
+    ctx.roundRect(30, 20, 964, 380, 24);
     ctx.fill();
 
     ctx.strokeStyle = 'rgba(255, 215, 120, 0.35)';
@@ -219,10 +292,6 @@ export class ThreadsEffect {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Split text into 3 balanced, poetic lines
-    // Line 1: "You've put in so much effort, and it really shows." (49 chars)
-    // Line 2: "Take a moment to be proud —" (27 chars)
-    // Line 3: "you've done more than you think." (32 chars)
     const line1Total = "You've put in so much effort, and it really shows.";
     const line2Total = "Take a moment to be proud —";
     const line3Total = "you've done more than you think.";
@@ -248,111 +317,212 @@ export class ThreadsEffect {
 
     ctx.font = 'italic 500 38px "Playfair Display", Georgia, serif';
     ctx.fillStyle = '#ffdfa0';
-    if (line2) ctx.fillText(line2, 512, 185);
+    if (line2) ctx.fillText(line2, 512, 195);
 
     ctx.font = '500 36px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#ffffff';
-    if (line3) ctx.fillText(line3, 512, 270);
+    if (line3) ctx.fillText(line3, 512, 290);
 
     ctx.restore();
     this.textTexture.needsUpdate = true;
   }
 
+  /**
+   * Start Stage 2: Black tethers appear
+   */
   public startStage2(orbPosition: THREE.Vector3) {
     this.group.position.copy(orbPosition);
     this.group.visible = true;
-    this.isStage2Active = true;
-    this.blackThreadsVisible = true;
-    this.goldenThreadsActive = false;
-    this.isDissolving = false;
-    this.isCompleted = false;
-    this.progressTime = 0;
+    this.currentPhase = 'black_tethers_active';
+    this.phaseTimer = 0;
     this.textRevealFraction = 0;
-    this.dissolutionProgress = 0;
 
     this.blackThreadsGroup.visible = true;
     this.goldenThreadsGroup.visible = false;
+    this.descendingGoldenGroup.visible = false;
     this.textCanvasMesh.visible = false;
+    this.tracerParticle.visible = false;
+    this.weavingStrands.forEach(s => s.visible = false);
     this.dissolutionParticles.visible = false;
+
+    // Reset black thread opacities
+    this.blackStrands.forEach(bs => {
+      const mat = bs.line.material as THREE.LineBasicMaterial;
+      mat.opacity = 0.9;
+    });
   }
 
-  public activateGoldenWriting() {
-    this.goldenThreadsActive = true;
+  /**
+   * Phase A: Golden strands emerge and orbit briefly
+   */
+  public startPhaseA_GoldenOrbit() {
+    this.currentPhase = 'golden_orbit';
+    this.phaseTimer = 0;
     this.goldenThreadsGroup.visible = true;
+  }
+
+  /**
+   * Phase B: Golden threads stream downwards, dissolving black threads
+   */
+  public startPhaseB_DownwardDissolution(onComplete: () => void) {
+    this.currentPhase = 'golden_dissolving_downwards';
+    this.phaseTimer = 0;
+    this.onPhaseBComplete = onComplete;
+
+    this.descendingGoldenGroup.visible = true;
+    this.dissolutionParticles.visible = true;
+    (this.dissolutionParticles.material as THREE.PointsMaterial).opacity = 0.9;
+  }
+
+  /**
+   * Phase C: Weave words of encouragement
+   */
+  public startPhaseC_WeavingWords(onComplete?: () => void) {
+    this.currentPhase = 'golden_weaving_words';
+    this.phaseTimer = 0;
+    this.textRevealFraction = 0;
+    this.onWeavingComplete = onComplete;
+
+    // Hide descending strands and orbit, focus exclusively on weaving!
+    this.goldenThreadsGroup.visible = false;
+    this.descendingGoldenGroup.visible = false;
+    this.blackThreadsGroup.visible = false;
+    this.dissolutionParticles.visible = false;
+
     this.textCanvasMesh.visible = true;
+    this.tracerParticle.visible = true;
+    this.weavingStrands.forEach(s => s.visible = true);
+    this.renderText(0);
   }
 
   public setTextProgress(progress: number) {
     this.textRevealFraction = Math.max(0, Math.min(1, progress));
     this.renderText(this.textRevealFraction);
 
-    // Animate tracer pen tip across the text box
+    // Physical tracer pen motion weaving the text
     const x = (this.textRevealFraction - 0.5) * 0.32;
-    const y = 0.25 + Math.sin(this.textRevealFraction * Math.PI * 4) * 0.03;
-    this.tracerParticle.position.set(x, y, 0.07);
-  }
+    const y = 0.24 + Math.sin(this.textRevealFraction * Math.PI * 6) * 0.025;
+    this.tracerParticle.position.set(x, y, 0.06);
 
-  public startDissolution() {
-    this.isDissolving = true;
-    this.dissolutionProgress = 0;
-    this.dissolutionParticles.visible = true;
+    // Weaving strands dance around the tracer pen
+    this.weavingStrands.forEach((strand, idx) => {
+      const pos = strand.geometry.attributes.position;
+      const count = pos.count;
+      for (let i = 0; i < count; i++) {
+        const u = i / (count - 1);
+        const px = (u - 0.5) * 0.34;
+        const py = 0.24 + Math.sin(u * Math.PI * 3 + this.phaseTimer * 3 + idx) * 0.035;
+        const pz = 0.04 + Math.cos(u * Math.PI * 2 + idx) * 0.015;
+        pos.setXYZ(i, px, py, pz);
+      }
+      pos.needsUpdate = true;
+    });
   }
 
   public update(delta: number, orbPosition: THREE.Vector3, cameraPosition: THREE.Vector3) {
-    if (!this.isStage2Active) return;
-
-    this.progressTime += delta;
     this.group.position.copy(orbPosition);
 
-    // Look text mesh at camera eye
     if (this.textCanvasMesh && this.textCanvasMesh.visible) {
       this.textCanvasMesh.lookAt(cameraPosition.x, this.textCanvasMesh.position.y + this.group.position.y, cameraPosition.z);
     }
 
-    // Keep the docking-station tethers aligned and steady; they should not swirl around the orb.
+    this.phaseTimer += delta;
 
-    // Golden threads dynamic orbit
-    if (this.goldenThreadsActive) {
-      this.goldenThreadsGroup.rotation.y += delta * 0.45;
-      this.goldenThreadsGroup.rotation.z += delta * 0.18;
+    // Phase A: Golden orbit
+    if (this.currentPhase === 'golden_orbit') {
+      this.goldenThreadsGroup.rotation.y += delta * 1.8;
+      this.goldenThreadsGroup.rotation.x = Math.sin(this.phaseTimer * 2) * 0.2;
     }
 
-    // Dissolution animation
-    if (this.isDissolving && !this.isCompleted) {
-      this.dissolutionProgress = Math.min(1.0, this.dissolutionProgress + delta * 0.65);
+    // Phase B: Downward dissolution
+    if (this.currentPhase === 'golden_dissolving_downwards') {
+      // Duration: 2.2 seconds for golden stream to pass from orb (-0.068) to dock (-0.195)
+      const duration = 2.2;
+      const progress = Math.min(1.0, this.phaseTimer / duration);
 
-      // Black threads scale down and fade
-      const inv = 1 - this.dissolutionProgress;
-      this.blackThreadsGroup.scale.set(inv, inv, inv);
+      const currentY = THREE.MathUtils.lerp(-0.068, -0.195, progress);
+      this.goldenDissolutionRing.position.y = currentY;
 
-      this.blackCurves.forEach(line => {
-        (line.material as THREE.LineBasicMaterial).opacity = inv * 0.88;
+      // Update descending golden stream lines
+      this.descendingStrands.forEach((line, i) => {
+        const angle = (i / 8) * Math.PI * 2;
+        const pos = line.geometry.attributes.position;
+        pos.setXYZ(0, Math.cos(angle) * 0.034, -0.068, Math.sin(angle) * 0.034);
+        pos.setXYZ(1, Math.cos(angle) * 0.040, THREE.MathUtils.lerp(-0.068, currentY, 0.4), Math.sin(angle) * 0.040);
+        pos.setXYZ(2, Math.cos(angle) * 0.045, THREE.MathUtils.lerp(-0.068, currentY, 0.8), Math.sin(angle) * 0.045);
+        pos.setXYZ(3, Math.cos(angle) * 0.050, currentY, Math.sin(angle) * 0.050);
+        pos.needsUpdate = true;
       });
 
-      // Dissolution particles vapor rising
-      const pMat = this.dissolutionParticles.material as THREE.PointsMaterial;
-      pMat.opacity = Math.sin(this.dissolutionProgress * Math.PI) * 0.95;
+      // Progressively dissolve the black threads as the golden ring descends past them!
+      this.blackStrands.forEach(bs => {
+        const pos = bs.line.geometry.attributes.position;
+        for (let p = 0; p < pos.count; p++) {
+          const ptY = bs.basePoints[p].y;
+          // If above current descending golden point, dissolve away
+          if (ptY >= currentY) {
+            // Compress to zero or fade
+            const inv = Math.max(0, 1 - (ptY - currentY) * 15);
+            pos.setXYZ(p, bs.basePoints[p].x * inv, ptY, bs.basePoints[p].z * inv);
+          } else {
+            pos.setXYZ(p, bs.basePoints[p].x, bs.basePoints[p].y, bs.basePoints[p].z);
+          }
+        }
+        pos.needsUpdate = true;
+        (bs.line.material as THREE.LineBasicMaterial).opacity = Math.max(0, 0.9 * (1 - progress));
+      });
 
-      const pos = this.dissolutionParticles.geometry.attributes.position;
-      const vel = this.dissolutionParticles.geometry.attributes.velocity;
-      for (let i = 0; i < pos.count; i++) {
-        pos.setX(i, pos.getX(i) + vel.getX(i) * delta);
-        pos.setY(i, pos.getY(i) + vel.getY(i) * delta);
-        pos.setZ(i, pos.getZ(i) + vel.getZ(i) * delta);
+      // Golden dissolution particles at the contact wavefront
+      const partPos = this.dissolutionParticles.geometry.attributes.position;
+      const partVel = this.dissolutionParticles.geometry.attributes.velocity;
+      for (let i = 0; i < partPos.count; i++) {
+        partPos.setY(i, partPos.getY(i) + partVel.getY(i) * delta);
+        if (partPos.getY(i) > -0.05) {
+          partPos.setY(i, currentY + (Math.random() - 0.5) * 0.02);
+        }
       }
-      pos.needsUpdate = true;
+      partPos.needsUpdate = true;
 
-      // When dissolution finishes
-      if (this.dissolutionProgress >= 1.0) {
-        this.isCompleted = true;
+      if (progress >= 1.0) {
         this.blackThreadsGroup.visible = false;
-        this.dissolutionParticles.visible = false;
-        // Fade out golden writing text smoothly
-        setTimeout(() => {
-          this.textCanvasMesh.visible = false;
-          this.goldenThreadsGroup.visible = false;
-        }, 1500);
+        this.descendingGoldenGroup.visible = false;
+        if (this.onPhaseBComplete) {
+          const cb = this.onPhaseBComplete;
+          this.onPhaseBComplete = undefined;
+          cb();
+        }
       }
     }
+
+    // Phase C: Weaving words
+    if (this.currentPhase === 'golden_weaving_words') {
+      // Weaving animation is driven via setTextProgress
+    }
+  }
+
+  public settle() {
+    this.currentPhase = 'settled';
+    // Smoothly fade out text and weaving strands
+    let f = 1.0;
+    const fadeTimer = setInterval(() => {
+      f -= 0.05;
+      if (this.textCanvasMesh) {
+        (this.textCanvasMesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, f);
+      }
+      if (this.tracerParticle) {
+        (this.tracerParticle.material as THREE.MeshBasicMaterial).opacity = Math.max(0, f);
+      }
+      this.weavingStrands.forEach(s => {
+        (s.material as THREE.LineBasicMaterial).opacity = Math.max(0, f * 0.8);
+      });
+
+      if (f <= 0) {
+        clearInterval(fadeTimer);
+        this.textCanvasMesh.visible = false;
+        this.tracerParticle.visible = false;
+        this.weavingStrands.forEach(s => s.visible = false);
+        this.group.visible = false;
+      }
+    }, 40);
   }
 }

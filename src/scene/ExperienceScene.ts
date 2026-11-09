@@ -21,6 +21,19 @@ export interface SceneCallbacks {
   onNarrationSubtitle: (text: string | null) => void;
 }
 
+interface CameraAnimationState {
+  mode: 'in' | 'hold' | 'out';
+  startPos: THREE.Vector3;
+  targetPos: THREE.Vector3;
+  startLook: THREE.Vector3;
+  targetLook: THREE.Vector3;
+  duration: number;
+  elapsed: number;
+  holdDuration: number;
+  holdTimer: number;
+  onComplete?: () => void;
+}
+
 export class ExperienceScene {
   public container: HTMLElement;
   public renderer!: THREE.WebGLRenderer;
@@ -45,6 +58,7 @@ export class ExperienceScene {
   private readonly defaultCameraTarget = new THREE.Vector3(0.08, 0.96, -1.4);
   private cameraLookTarget = new THREE.Vector3().copy(this.defaultCameraTarget);
   private seatedBreathingPhase: number = 0;
+  private cameraAnimation: CameraAnimationState | null = null;
 
   // Experience State Machine
   public currentStage: ExperienceStage = 'stage1_acknowledgement';
@@ -55,9 +69,8 @@ export class ExperienceScene {
   private pointerNorm = new THREE.Vector2();
   private isPointerDown: boolean = false;
   private planeIntersect = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.08);
-  // Film is dragged across the horizontal desk surface, not an arbitrary screen-space plane.
-  private filmDragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.764);
-  private waterTargetPosition = new THREE.Vector3(-0.5, 0.828, -0.2);
+  private filmDragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.742);
+  private waterTargetPosition = new THREE.Vector3(-0.5, 0.74 + 0.08, -0.2);
   private raycastHitPos = new THREE.Vector3();
 
   // Gesture Tracking
@@ -65,7 +78,7 @@ export class ExperienceScene {
   private previousPinch: boolean = false;
   private previousWave: boolean = false;
 
-  // Visual hand pointer, positioned over the WebGL canvas.
+  // Visual hand pointer
   private handCursorLayer: HTMLDivElement | null = null;
   private handCursorElement: HTMLDivElement | null = null;
   private handCursorDot: HTMLDivElement | null = null;
@@ -120,7 +133,6 @@ export class ExperienceScene {
     this.scene.background = new THREE.Color(0x0c0b0f);
     this.scene.fog = new THREE.FogExp2(0x1a161b, 0.045);
 
-    // Procedural Studio Environment for realistic PBR glass & brushed metals
     const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
     pmremGenerator.compileEquirectangularShader();
     this.scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -129,40 +141,32 @@ export class ExperienceScene {
 
   private initCamera() {
     const aspect = this.container.clientWidth / this.container.clientHeight;
-    // 64-degree FOV for natural human seated field of view
     this.camera = new THREE.PerspectiveCamera(62, aspect, 0.05, 50);
     this.camera.position.copy(this.defaultCameraPos);
     this.camera.lookAt(this.cameraLookTarget);
   }
 
   private initModules() {
-    // 1. Bedroom
     this.bedroom = new BedroomEnvironment();
     this.scene.add(this.bedroom.group);
 
-    // 2. 6 Floating Screens
     this.screenManager = new FloatingScreenManager();
     this.scene.add(this.screenManager.group);
 
-    // 3. Central Orb & Docking Station
     this.dockAndOrb = new DockAndOrb();
     this.scene.add(this.dockAndOrb.group);
 
-    // 4. Stage 2 Threads
     this.threadsEffect = new ThreadsEffect();
     this.scene.add(this.threadsEffect.group);
 
-    // 5. Stage 3 Footsteps & Film
     this.footstepsAndFilm = new FootstepsAndFilm();
     this.scene.add(this.footstepsAndFilm.group);
 
-    // Initial instruction prompt
     this.setSubstate('idle_waiting_wave');
-    this.callbacks.onInstructionChange('Wave your hand (or click "Wave Hand") to begin.');
+    this.callbacks.onInstructionChange('Action: Wave hand or click "Wave to Begin"');
   }
 
   private initHandCursor() {
-    // The overlay sits above the canvas but never intercepts mouse or touch input.
     const layer = document.createElement('div');
     layer.setAttribute('aria-hidden', 'true');
     Object.assign(layer.style, {
@@ -216,14 +220,12 @@ export class ExperienceScene {
       return;
     }
 
-    // Use the same mirrored, normalized coordinates that drive interaction raycasts.
     const x = THREE.MathUtils.clamp(state.handX, 0, 1) * 100;
     const y = THREE.MathUtils.clamp(state.handY, 0, 1) * 100;
     this.handCursorElement.style.left = `${x}%`;
     this.handCursorElement.style.top = `${y}%`;
     this.handCursorElement.style.opacity = '1';
 
-    // Blue means tracking; warm amber confirms an active pinch.
     const color = state.isPinching ? '#ffc36b' : '#49b1ff';
     this.handCursorElement.style.borderColor = color;
     this.handCursorElement.style.backgroundColor = state.isPinching
@@ -270,7 +272,6 @@ export class ExperienceScene {
     this.raycaster.setFromCamera(this.pointerNorm, this.camera);
     if (!this.raycaster.ray.intersectPlane(this.filmDragPlane, this.raycastHitPos)) return false;
 
-    // Keep the film on the tabletop and within the usable desk area.
     this.raycastHitPos.x = THREE.MathUtils.clamp(this.raycastHitPos.x, -0.78, 0.78);
     this.raycastHitPos.z = THREE.MathUtils.clamp(this.raycastHitPos.z, -0.36, 0.42);
     this.footstepsAndFilm.edibleFilmGroup.position.set(
@@ -287,7 +288,7 @@ export class ExperienceScene {
       filmPos.x - this.waterTargetPosition.x,
       filmPos.z - this.waterTargetPosition.z
     );
-    return distanceXZ < 0.105;
+    return distanceXZ < 0.11;
   }
 
   private onPointerMove = (e: PointerEvent) => {
@@ -295,25 +296,26 @@ export class ExperienceScene {
     this.pointerNorm.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointerNorm.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
-    // Subtle seated gaze tracking (participant's subtle eye/head drift following pointer)
-    const targetGazeX = this.defaultCameraTarget.x + this.pointerNorm.x * 0.08;
-    const targetGazeY = this.defaultCameraTarget.y + this.pointerNorm.y * 0.05;
-    this.cameraLookTarget.x = THREE.MathUtils.lerp(this.cameraLookTarget.x, targetGazeX, 0.08);
-    this.cameraLookTarget.y = THREE.MathUtils.lerp(this.cameraLookTarget.y, targetGazeY, 0.08);
+    // Subtle gaze tracking when not in cinematic camera zoom
+    if (!this.cameraAnimation) {
+      const targetGazeX = this.defaultCameraTarget.x + this.pointerNorm.x * 0.08;
+      const targetGazeY = this.defaultCameraTarget.y + this.pointerNorm.y * 0.05;
+      this.cameraLookTarget.x = THREE.MathUtils.lerp(this.cameraLookTarget.x, targetGazeX, 0.08);
+      this.cameraLookTarget.y = THREE.MathUtils.lerp(this.cameraLookTarget.y, targetGazeY, 0.08);
+    }
 
     // Dragging Orb in Stage 3
     if (this.dockAndOrb.isGrabbed) {
       this.raycaster.setFromCamera(this.pointerNorm, this.camera);
       if (this.raycaster.ray.intersectPlane(this.planeIntersect, this.raycastHitPos)) {
-        // Clamp to comfortable seated desk area
         this.raycastHitPos.x = THREE.MathUtils.clamp(this.raycastHitPos.x, -0.6, 0.6);
         this.raycastHitPos.y = THREE.MathUtils.clamp(this.raycastHitPos.y, 0.76, 1.25);
-        this.raycastHitPos.z = THREE.MathUtils.clamp(this.raycastHitPos.z, -0.2, 0.35);
+        this.raycastHitPos.z = THREE.MathUtils.clamp(this.raycastHitPos.z, -0.32, 0.35);
         this.dockAndOrb.orbGroup.position.copy(this.raycastHitPos);
       }
     }
 
-    // Dragging Edible Film across the actual horizontal desk plane.
+    // Dragging Edible Film across horizontal desk
     if (this.footstepsAndFilm.isFilmGrabbed && this.moveEdibleFilmWithPointer()) {
       if (this.isEdibleFilmOverWater()) {
         this.triggerDissolveRitual();
@@ -323,26 +325,24 @@ export class ExperienceScene {
 
   private onPointerDown = () => {
     this.isPointerDown = true;
-
-    // Raycast check
     this.raycaster.setFromCamera(this.pointerNorm, this.camera);
 
-    // Check click on Orb during Stage 3 free interaction
+    // Stage 3 Free Orb
     if (this.currentStage === 'stage3_closure' && this.currentSubstate === 'orb_free_interaction') {
       const orbIntersects = this.raycaster.intersectObject(this.dockAndOrb.outerGlassOrb);
       if (orbIntersects.length > 0) {
         this.dockAndOrb.isGrabbed = true;
         this.dockAndOrb.setDocked(false);
-        this.callbacks.onInstructionChange('Drag the orb to move it. Wave your hand to send it back to the docking station.');
+        this.callbacks.onInstructionChange('Action: Drag the orb freely, or wave your hand to dock it');
         return;
       }
     }
 
-    // Check click on Edible Film during Stage 3 takeaway ritual
+    // Stage 3 Edible Film Grab
     if (this.footstepsAndFilm.isFilmPrinted && !this.footstepsAndFilm.isFilmConsumed && !this.footstepsAndFilm.isFilmDissolved) {
       if (this.isPointerOverEdibleFilm()) {
         this.footstepsAndFilm.isFilmGrabbed = true;
-        this.callbacks.onInstructionChange('Drag the film to the water glass to dissolve it, or choose "Eat Film".');
+        this.callbacks.onInstructionChange('Action: Drag to water glass to dissolve, or click "Eat Film"');
       }
     }
   };
@@ -350,13 +350,11 @@ export class ExperienceScene {
   private onPointerUp = () => {
     this.isPointerDown = false;
 
-    // Releasing the orb only stops dragging. A hand wave is the docking command.
     if (this.dockAndOrb.isGrabbed) {
       this.dockAndOrb.isGrabbed = false;
       this.dockAndOrb.currentOrbTarget.copy(this.dockAndOrb.orbGroup.position);
     }
 
-    // Releasing Edible Film
     if (this.footstepsAndFilm.isFilmGrabbed) {
       this.footstepsAndFilm.isFilmGrabbed = false;
       if (this.isEdibleFilmOverWater()) {
@@ -365,9 +363,6 @@ export class ExperienceScene {
     }
   };
 
-  /**
-   * Handle Gestures from MediaPipe Hand Tracker
-   */
   public handleHandGesture(state: HandGestureState) {
     this.currentHandState = state;
     this.updateHandCursor(state);
@@ -378,7 +373,6 @@ export class ExperienceScene {
       return;
     }
 
-    // Map hand coordinates (0..1) to NDC (-1..1)
     const ndcX = (state.handX - 0.5) * 2;
     const ndcY = -(state.handY - 0.5) * 2;
     this.pointerNorm.set(ndcX, ndcY);
@@ -390,12 +384,10 @@ export class ExperienceScene {
       }
     }
 
-    // 2. Pinching to Grab Orb in Stage 3
+    // 2. Pinching / Moving Orb in Stage 3
     if (this.currentStage === 'stage3_closure' && this.currentSubstate === 'orb_free_interaction') {
       if (state.isPinching && !this.previousPinch && !this.dockAndOrb.isGrabbed) {
-        // Only pick up the orb when the pinch cursor is actually over it.
         this.dockAndOrb.orbGroup.updateMatrixWorld(true);
-        // Refresh the ray from the current fingertip/pinch cursor before testing the orb.
         this.raycaster.setFromCamera(this.pointerNorm, this.camera);
         const orbHit = this.raycaster.intersectObject(this.dockAndOrb.outerGlassOrb, false);
         if (orbHit.length > 0) {
@@ -403,33 +395,31 @@ export class ExperienceScene {
           this.dockAndOrb.setDocked(false);
         }
       } else if (!state.isPinching && this.previousPinch) {
-        // Releasing the pinch leaves the orb hovering where it was released.
         if (this.dockAndOrb.isGrabbed) {
           this.dockAndOrb.isGrabbed = false;
           this.dockAndOrb.currentOrbTarget.copy(this.dockAndOrb.orbGroup.position);
         }
       }
 
-      // A deliberate wave sends the orb back to its docking station.
+      // Deliberate wave returns orb to dock
       if (state.isWaving && !this.previousWave && !this.dockAndOrb.isGrabbed) {
         this.dockTheOrb();
       }
 
-      // While pinching, the orb follows the tracked hand.
       if (this.dockAndOrb.isGrabbed) {
         const targetX = ndcX * 0.45;
         const targetY = 0.74 + 0.25 + ndcY * 0.25;
-        const targetZ = 0.08;
+        const targetZ = -0.23 + 0.2;
         this.dockAndOrb.orbGroup.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.15);
       }
     }
 
-    // 3. Pinch the edible film only when the tracked cursor is over its hit area.
+    // 3. Pinching circular edible film
     if (this.footstepsAndFilm.isFilmPrinted && !this.footstepsAndFilm.isFilmConsumed && !this.footstepsAndFilm.isFilmDissolved) {
       if (state.isPinching && !this.previousPinch && !this.footstepsAndFilm.isFilmGrabbed) {
         if (this.isPointerOverEdibleFilm()) {
           this.footstepsAndFilm.isFilmGrabbed = true;
-          this.callbacks.onInstructionChange('Move the film over the water glass to dissolve it, or release it to keep it.');
+          this.callbacks.onInstructionChange('Action: Drag over water glass to dissolve, or release to place down');
         }
       } else if (!state.isPinching && this.previousPinch && this.footstepsAndFilm.isFilmGrabbed) {
         this.footstepsAndFilm.isFilmGrabbed = false;
@@ -450,53 +440,74 @@ export class ExperienceScene {
     this.previousWave = state.isWaving;
   }
 
+  // ================= CAMERA CINEMATIC ZOOM HELPER =================
+
+  /**
+   * Smoothly zoom in towards the orb, hold, and smoothly zoom back out.
+   */
+  private zoomToOrb(holdDuration: number, onComplete?: () => void) {
+    const orbPos = this.dockAndOrb.orbGroup.position.clone();
+    // Close framing just in front of orb
+    const targetZoomPos = new THREE.Vector3(orbPos.x, orbPos.y + 0.015, orbPos.z + 0.24);
+    const targetLook = orbPos.clone();
+
+    this.cameraAnimation = {
+      mode: 'in',
+      startPos: this.camera.position.clone(),
+      targetPos: targetZoomPos,
+      startLook: this.cameraLookTarget.clone(),
+      targetLook: targetLook,
+      duration: 1.8,
+      elapsed: 0,
+      holdDuration,
+      holdTimer: 0,
+      onComplete,
+    };
+  }
+
   // ================= STAGE 1: ACKNOWLEDGEMENT =================
 
   public triggerStartWave() {
     if (this.currentSubstate !== 'idle_waiting_wave') return;
     this.setSubstate('orb_materializing');
-    this.callbacks.onInstructionChange('The central orb awakens...');
+    this.callbacks.onInstructionChange('Observe: The central orb awakens...');
 
-    // 1. Materialize glass orb above dock
+    // 1. Materialize glass orb above firewood dock
     this.dockAndOrb.materialize();
 
     setTimeout(() => {
       // 2. Absorb screens into orb one after another
       this.setSubstate('screens_absorbing');
-      this.callbacks.onInstructionChange('Absorbing your day\'s work into the orb...');
+      this.callbacks.onInstructionChange('Observe: Work screens returning to the orb');
 
       const orbWorldPos = this.dockAndOrb.dockPosition.clone();
       orbWorldPos.y = this.dockAndOrb.orbHoverY;
 
-      // Keep the Stage 1 screen absorption silent; overlapping rising-pitch
-      // chimes were creating a siren-like sound during the opening transition.
       this.screenManager.startAbsorption(
         undefined,
         () => {
-          // 3. All screens absorbed -> display the floating recognition tab beside the orb
-          this.showAccomplishmentsTab();
+          // 3. All screens absorbed -> display accomplishments INSIDE the orb + camera zoom
+          this.showAccomplishmentsInsideOrbSequence();
         }
       );
     }, 1800);
   }
 
-  private showAccomplishmentsTab() {
+  /**
+   * Stage 1: Display Completed Tasks INSIDE the Orb + Smooth Camera Zoom
+   */
+  private showAccomplishmentsInsideOrbSequence() {
     this.setSubstate('showing_accomplishments');
-    this.callbacks.onInstructionChange('Recognizing what you accomplished today.');
+    this.callbacks.onInstructionChange('Observe: Daily achievements captured within the orb');
 
-    let fade = 0;
-    const interval = setInterval(() => {
-      fade += 0.05;
-      this.dockAndOrb.showAccomplishments(fade);
-      if (fade >= 1.0) {
-        clearInterval(interval);
+    // Reveal holographic accomplishments inside the orb volume
+    this.dockAndOrb.renderAccomplishmentsInsideOrb(1.0);
 
-        // Pause to absorb accomplishments, then transition to Stage 2
-        setTimeout(() => {
-          this.transitionToStage2();
-        }, 5500);
-      }
-    }, 40);
+    // Zoom camera towards orb, hold for 4.5 seconds for comfortable reading, then zoom out
+    this.zoomToOrb(4.5, () => {
+      // Transition to Stage 2 after camera returns smoothly to seated position
+      this.transitionToStage2();
+    });
   }
 
   // ================= STAGE 2: ENCOURAGEMENT =================
@@ -505,70 +516,73 @@ export class ExperienceScene {
     this.currentStage = 'stage2_encouragement';
     this.setSubstate('black_threads_emerging');
     this.callbacks.onStageChange('stage2_encouragement', 'black_threads_emerging');
-    this.callbacks.onInstructionChange('Acknowledging the mental weight and lingering worries...');
+    this.callbacks.onInstructionChange('Observe: Lingering thoughts and work weight acknowledged');
 
-    // Fade out the floating recognition tab
+    // Fade out internal accomplishments from orb
     let fade = 1.0;
     const fadeOut = setInterval(() => {
-      fade -= 0.08;
-      this.dockAndOrb.showAccomplishments(fade);
+      fade -= 0.1;
+      this.dockAndOrb.renderAccomplishmentsInsideOrb(fade);
       if (fade <= 0) {
         clearInterval(fadeOut);
-        this.dockAndOrb.showAccomplishments(0);
+        this.dockAndOrb.clearInternalDisplay();
       }
     }, 40);
 
     // Warm bedroom atmosphere transition
     this.bedroom.setAtmosphereTransition(0.45);
 
-    // 1. Black threads emerge around orb
+    // 1. Black tethers appear connecting orb to dock
     const orbPos = this.dockAndOrb.orbGroup.position;
     this.threadsEffect.startStage2(orbPos);
 
+    // Phase A: Golden threads emerge from orb, brief 1.5s orbit
     setTimeout(() => {
-      // 2. Golden threads appear and physically write encouragement message
-      this.setSubstate('golden_threads_writing');
-      this.threadsEffect.activateGoldenWriting();
+      this.threadsEffect.startPhaseA_GoldenOrbit();
       soundscape.playThreadShimmer();
 
-      const message = this.threadsEffect.fullMessage;
-      this.callbacks.onInstructionChange('Words of encouragement taking form...');
-      this.callbacks.onNarrationSubtitle(message);
-
-      // Progressive writing animation linked with speech
-      let writeProgress = 0;
-      const writeTimer = setInterval(() => {
-        writeProgress += 0.015;
-        this.threadsEffect.setTextProgress(writeProgress);
-        if (writeProgress >= 1.0) {
-          clearInterval(writeTimer);
-        }
-      }, 70);
-
-      // 3. Spoken voice reading exact same message
-      // CRITICAL REQUIREMENT: Spoken message MUST finish completely before black threads dissolve!
-      soundscape.speak(message, () => {
-        // Voice is 100% finished now
-        this.callbacks.onNarrationSubtitle(null);
-        this.setSubstate('threads_dissolving');
-        this.callbacks.onInstructionChange('Releasing lingering worries into golden light...');
-
+      // Phase B: Golden threads stream downwards, dissolving black threads progressively
+      setTimeout(() => {
+        this.callbacks.onInstructionChange('Observe: Golden threads dissolving lingering worries');
         soundscape.playDissolutionSwoosh();
-        this.threadsEffect.startDissolution();
 
-        // Bedroom warms further
-        this.bedroom.setAtmosphereTransition(0.75);
+        this.threadsEffect.startPhaseB_DownwardDissolution(() => {
+          // Black threads completely dissolved!
+          // Phase C: Golden threads rise and weave the encouragement message in air
+          this.setSubstate('golden_threads_writing');
+          this.callbacks.onInstructionChange('Observe: Words of encouragement taking form');
+          this.callbacks.onNarrationSubtitle(this.threadsEffect.fullMessage);
 
-        setTimeout(() => {
-          this.setSubstate('orb_cleared');
-          this.callbacks.onInstructionChange('The orb is freed and clear.');
+          this.threadsEffect.startPhaseC_WeavingWords();
 
-          setTimeout(() => {
-            this.transitionToStage3();
-          }, 2400);
-        }, 2200);
-      });
-    }, 2800);
+          // Weaving animation progress linked with speech
+          let writeProgress = 0;
+          const writeTimer = setInterval(() => {
+            writeProgress += 0.015;
+            this.threadsEffect.setTextProgress(writeProgress);
+            if (writeProgress >= 1.0) {
+              clearInterval(writeTimer);
+            }
+          }, 70);
+
+          // Narrate exact matching message
+          soundscape.speak(this.threadsEffect.fullMessage, () => {
+            this.callbacks.onNarrationSubtitle(null);
+            this.bedroom.setAtmosphereTransition(0.75);
+
+            setTimeout(() => {
+              this.threadsEffect.settle();
+              this.setSubstate('orb_cleared');
+              this.callbacks.onInstructionChange('Observe: The orb is freed and clear');
+
+              setTimeout(() => {
+                this.transitionToStage3();
+              }, 1800);
+            }, 1200);
+          });
+        });
+      }, 1500); // Brief 1.5s orbit of anticipation
+    }, 1800);
   }
 
   // ================= STAGE 3: CLOSURE =================
@@ -577,9 +591,8 @@ export class ExperienceScene {
     this.currentStage = 'stage3_closure';
     this.setSubstate('orb_free_interaction');
     this.callbacks.onStageChange('stage3_closure', 'orb_free_interaction');
-    this.callbacks.onInstructionChange('Feel free to grab, move or toss the orb. Return it to the dock when ready.');
+    this.callbacks.onInstructionChange('Action: Drag the orb freely, or wave your hand to dock it');
 
-    // Bedroom atmosphere becomes completely calm and restful
     this.bedroom.setAtmosphereTransition(1.0);
   }
 
@@ -589,53 +602,55 @@ export class ExperienceScene {
     soundscape.playScreenAbsorb(4);
 
     this.setSubstate('orb_docked');
-    this.callbacks.onInstructionChange('The orb has returned to its dock.');
+    this.callbacks.onInstructionChange('Observe: The orb rests in the firewood dock');
 
-    // Step B: Wisdom Quote
+    // Sequence: Glowing footsteps first, then film printing with wisdom inside orb
     setTimeout(() => {
-      this.playWisdomQuote();
-    }, 1200);
-  }
-
-  private playWisdomQuote() {
-    this.setSubstate('wisdom_quote');
-    const quote = 'A calmer mind creates a brighter tomorrow.';
-    this.callbacks.onInstructionChange(`"${quote}"`);
-    this.callbacks.onNarrationSubtitle(quote);
-
-    // CRITICAL REQUIREMENT: Wisdom quote must finish before footsteps begin!
-    soundscape.speak(quote, () => {
-      this.callbacks.onNarrationSubtitle(null);
-      setTimeout(() => {
-        this.startGlowingFootsteps();
-      }, 800);
-    });
+      this.startGlowingFootsteps();
+    }, 1000);
   }
 
   private startGlowingFootsteps() {
     this.setSubstate('glowing_footsteps');
-    this.callbacks.onInstructionChange('A path forms toward the doorway, gently calling you away from work.');
+    this.callbacks.onInstructionChange('Observe: A glowing path forms toward the doorway');
 
     this.footstepsAndFilm.startFootsteps(
       (stepIdx) => {
         soundscape.playFootstepChime(stepIdx);
       },
       () => {
-        // All footsteps lit!
+        // Footsteps path lit -> begin printing circular film & wisdom quote inside orb!
         setTimeout(() => {
-          this.printEdibleFilm();
-        }, 1200);
+          this.printFilmAndDisplayWisdomInsideOrb();
+        }, 1000);
       }
     );
   }
 
-  private printEdibleFilm() {
-    // CRITICAL REQUIREMENT: Edible film only prints AFTER footsteps sequence!
+  /**
+   * Stage 3: Print Circular Edible Film + Words of Wisdom INSIDE the Orb + Camera Zoom
+   */
+  private printFilmAndDisplayWisdomInsideOrb() {
     this.setSubstate('film_printed');
-    this.callbacks.onInstructionChange('Your takeaway film has printed. Choose your ritual: Eat or Dissolve in water.');
-
     soundscape.playPrinterSound();
     this.footstepsAndFilm.printEdibleFilm();
+
+    const quote = 'A calmer mind creates a brighter tomorrow.';
+    this.callbacks.onInstructionChange('Observe: Words of wisdom unfolding');
+    this.callbacks.onNarrationSubtitle(quote);
+
+    // Words of wisdom appear INSIDE the orb volume
+    this.dockAndOrb.renderWisdomInsideOrb(1.0);
+
+    // Speak quote aloud
+    soundscape.speak(quote, () => {
+      this.callbacks.onNarrationSubtitle(null);
+    });
+
+    // Smooth camera zoom towards orb to absorb wisdom, hold, and return
+    this.zoomToOrb(3.8, () => {
+      this.callbacks.onInstructionChange('Action: Choose your ritual — eat the film or dissolve it in water');
+    });
   }
 
   // Option 1: Eat the film
@@ -660,12 +675,12 @@ export class ExperienceScene {
     this.callbacks.onStageChange('completed', 'ritual_completed');
 
     const finalMessage = "You've done enough. Now it's your time.";
-    this.callbacks.onInstructionChange(finalMessage);
+    this.callbacks.onInstructionChange(`Observe: ${finalMessage}`);
     this.callbacks.onNarrationSubtitle(finalMessage);
 
     setTimeout(() => {
       soundscape.speak(finalMessage, () => {
-        // Serene completion state
+        // Calming restful state
       });
     }, 600);
   }
@@ -681,23 +696,66 @@ export class ExperienceScene {
     const tick = () => {
       const delta = Math.min(this.clock.getDelta(), 0.1);
 
-      // Seated camera gentle breathing sway
-      this.seatedBreathingPhase += delta * 0.8;
-      this.camera.position.x = this.defaultCameraPos.x + Math.sin(this.seatedBreathingPhase * 0.6) * 0.003;
-      this.camera.position.y = this.defaultCameraPos.y + Math.sin(this.seatedBreathingPhase) * 0.004;
-      this.camera.lookAt(this.cameraLookTarget);
+      // Handle cinematic camera zoom animation
+      if (this.cameraAnimation) {
+        const anim = this.cameraAnimation;
+        anim.elapsed += delta;
 
-      // Update modules
+        if (anim.mode === 'in') {
+          const t = Math.min(1.0, anim.elapsed / anim.duration);
+          // Smooth cubic ease-in-out
+          const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          this.camera.position.lerpVectors(anim.startPos, anim.targetPos, ease);
+          this.cameraLookTarget.lerpVectors(anim.startLook, anim.targetLook, ease);
+          this.camera.lookAt(this.cameraLookTarget);
+
+          if (t >= 1.0) {
+            anim.mode = 'hold';
+            anim.holdTimer = 0;
+          }
+        } else if (anim.mode === 'hold') {
+          anim.holdTimer += delta;
+          this.camera.lookAt(this.cameraLookTarget);
+          if (anim.holdTimer >= anim.holdDuration) {
+            anim.mode = 'out';
+            anim.elapsed = 0;
+            anim.startPos = this.camera.position.clone();
+            anim.targetPos = this.defaultCameraPos.clone();
+            anim.startLook = this.cameraLookTarget.clone();
+            anim.targetLook = this.defaultCameraTarget.clone();
+          }
+        } else if (anim.mode === 'out') {
+          const t = Math.min(1.0, anim.elapsed / anim.duration);
+          const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          this.camera.position.lerpVectors(anim.startPos, anim.targetPos, ease);
+          this.cameraLookTarget.lerpVectors(anim.startLook, anim.targetLook, ease);
+          this.camera.lookAt(this.cameraLookTarget);
+
+          if (t >= 1.0) {
+            const onComp = anim.onComplete;
+            this.cameraAnimation = null;
+            this.camera.position.copy(this.defaultCameraPos);
+            this.cameraLookTarget.copy(this.defaultCameraTarget);
+            if (onComp) onComp();
+          }
+        }
+      } else {
+        // Natural gentle seated breathing sway when not zooming
+        this.seatedBreathingPhase += delta * 0.8;
+        this.camera.position.x = this.defaultCameraPos.x + Math.sin(this.seatedBreathingPhase * 0.6) * 0.003;
+        this.camera.position.y = this.defaultCameraPos.y + Math.sin(this.seatedBreathingPhase) * 0.004;
+        this.camera.lookAt(this.cameraLookTarget);
+      }
+
+      // Update scene modules
       const orbPos = this.dockAndOrb.orbGroup.position;
       this.screenManager.update(delta, orbPos);
       this.dockAndOrb.update(delta, this.camera.position);
       this.threadsEffect.update(delta, orbPos, this.camera.position);
       this.footstepsAndFilm.update(delta);
 
-      // Render
       this.renderer.render(this.scene, this.camera);
 
-      // Frame pacing for software WebGL
       if (this.isSoftwareGl) {
         this.afterDraw(tick);
       } else {
@@ -731,17 +789,26 @@ export class ExperienceScene {
   public resetExperience() {
     this.currentStage = 'stage1_acknowledgement';
     this.currentSubstate = 'idle_waiting_wave';
+    this.cameraAnimation = null;
+    this.camera.position.copy(this.defaultCameraPos);
+    this.cameraLookTarget.copy(this.defaultCameraTarget);
+    this.camera.lookAt(this.cameraLookTarget);
+
     this.screenManager.reset();
     this.dockAndOrb.orbGroup.visible = false;
     this.dockAndOrb.orbGroup.scale.set(0.001, 0.001, 0.001);
     this.dockAndOrb.isMaterialized = false;
     this.dockAndOrb.setDocked(false);
-    this.threadsEffect.isStage2Active = false;
+    this.dockAndOrb.clearInternalDisplay();
+
+    this.threadsEffect.currentPhase = 'idle';
     this.threadsEffect.group.visible = false;
+
     this.footstepsAndFilm.reset();
     this.bedroom.setAtmosphereTransition(0);
+
     this.callbacks.onStageChange('stage1_acknowledgement', 'idle_waiting_wave');
-    this.callbacks.onInstructionChange('Wave your hand (or click "Wave Hand") to begin.');
+    this.callbacks.onInstructionChange('Action: Wave hand or click "Wave to Begin"');
     this.callbacks.onNarrationSubtitle(null);
   }
 

@@ -18,7 +18,7 @@ export default function App() {
 
   const [currentStage, setCurrentStage] = useState<ExperienceStage>('stage1_acknowledgement');
   const [currentSubstate, setCurrentSubstate] = useState<string>('idle_waiting_wave');
-  const [instructionText, setInstructionText] = useState<string>('Wave your hand (or click "Wave Hand") to begin.');
+  const [instructionText, setInstructionText] = useState<string>('Action: Wave hand or click "Wave to Begin"');
   const [subtitle, setSubtitle] = useState<string | null>(null);
 
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);

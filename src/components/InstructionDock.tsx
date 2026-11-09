@@ -129,11 +129,19 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
 
             {/* Instruction Callout */}
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold">
-                Guidance
-              </span>
-              <p className="text-sm font-medium text-stone-100 truncate max-w-[280px] sm:max-w-[380px]">
-                {instructionText}
+              <div className="flex items-center gap-1.5 mb-0.5">
+                {instructionText.startsWith('Action:') ? (
+                  <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-semibold tracking-wider uppercase">
+                    Your Turn
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.5 bg-stone-700/60 text-stone-300 border border-stone-600/40 rounded text-[10px] font-medium tracking-wider uppercase">
+                    Observe
+                  </span>
+                )}
+              </div>
+              <p className="text-sm font-medium text-stone-100 truncate max-w-[280px] sm:max-w-[420px]">
+                {instructionText.replace(/^(Action:|Observe:)\s*/i, '')}
               </p>
             </div>
           </div>

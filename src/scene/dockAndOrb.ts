@@ -1,11 +1,14 @@
 /**
- * EXORA Central Orb & Docking Station
- * Physically convincing glass orb with internal depth, swirling micro-particles,
- * floating recognition tab, and 2046 consumer docking station with
- * edible-film printer slot and mist ring.
+ * EXORA Central Orb & Firewood-Inspired Docking Station
+ * 
+ * Features:
+ * - Natural, tactile firewood/stacked-log cradle combining warm organic timber billets with 2046 precision bronze joinery.
+ * - Central concave resting cradle for the glass orb with integrated edible-film printer slot.
+ * - Physically convincing glass orb with internal depth, particle cloud, and integrated holographic text displayed inside the orb volume (Accomplishments & Words of Wisdom).
  */
 
 import * as THREE from 'three';
+import { createWoodTexture } from './materials';
 
 export class DockAndOrb {
   public group: THREE.Group;
@@ -16,25 +19,27 @@ export class DockAndOrb {
   public outerGlassOrb!: THREE.Mesh;
   public innerCoreSphere!: THREE.Mesh;
   public innerParticleCloud!: THREE.Points;
-  public accomplishmentsPlane!: THREE.Mesh;
+  public internalDisplayPlane!: THREE.Mesh;
   public dockRingLight!: THREE.PointLight;
   public orbInternalLight!: THREE.PointLight;
   public printerSlotHatch!: THREE.Mesh;
 
-  // Orb resting and hovering coordinates (Desk surface is at y = 0.74)
-  // Centered left-to-right and set toward the far side of the tabletop, away from the seated participant.
+  // Coordinates on desk
   public readonly dockPosition = new THREE.Vector3(0, 0.74, -0.23);
-  public readonly orbHoverY = 0.74 + 0.24; // hovering above docking station
+  public readonly orbHoverY = 0.74 + 0.24; // Hover height above cradle
   public currentOrbTarget = new THREE.Vector3();
   public orbVelocity = new THREE.Vector3();
 
-  // Orb interaction state
+  // State
   public isMaterialized: boolean = false;
   public isGrabbed: boolean = false;
   public isDocked: boolean = false;
   private materializationProgress: number = 0;
-  private accomplishmentsCanvas!: HTMLCanvasElement;
-  private accomplishmentsTexture!: THREE.CanvasTexture;
+
+  // High-DPI internal text canvas (1024x1024)
+  private displayCanvas!: HTMLCanvasElement;
+  private displayTexture!: THREE.CanvasTexture;
+  private currentDisplayMode: 'none' | 'accomplishments' | 'wisdom' = 'none';
 
   constructor() {
     this.group = new THREE.Group();
@@ -48,105 +53,147 @@ export class DockAndOrb {
     this.group.add(this.dockGroup);
     this.group.add(this.orbGroup);
 
-    this.buildDockingStation();
+    this.buildFirewoodDockingStation();
     this.buildGlassOrb();
-    this.buildAccomplishments();
+    this.buildInternalDisplay();
 
     // Start hidden until wave trigger in Stage 1
     this.orbGroup.scale.set(0.001, 0.001, 0.001);
     this.orbGroup.visible = false;
   }
 
-  private buildDockingStation() {
-    // 2046 Consumer technology: Sleek matte graphite base with chamfered warm bronze accents
-    const baseMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1918,
-      roughness: 0.35,
-      metalness: 0.65,
+  /**
+   * Firewood-Inspired Docking Station:
+   * Built from a sculptural cluster of horizontal split-log billets forming a natural cradle,
+   * held by brushed bronze bands and featuring an integrated printer slot and warm ember bed.
+   */
+  private buildFirewoodDockingStation() {
+    const woodTex = createWoodTexture(true); // Smoked cedar / dark walnut
+    const woodMat = new THREE.MeshStandardMaterial({
+      map: woodTex,
+      roughness: 0.65,
+      metalness: 0.05,
     });
 
     const bronzeMat = new THREE.MeshStandardMaterial({
-      color: 0x7a5b3a,
-      roughness: 0.25,
+      color: 0x8a663e,
+      roughness: 0.3,
       metalness: 0.85,
     });
 
-    // Base body: Cylindrical with soft fillet bevel
-    const baseGeo = new THREE.CylinderGeometry(0.12, 0.13, 0.038, 48);
-    const baseMesh = new THREE.Mesh(baseGeo, baseMat);
-    baseMesh.position.set(0, 0.019, 0);
-    baseMesh.castShadow = true;
-    baseMesh.receiveShadow = true;
-    this.dockGroup.add(baseMesh);
-
-    // Concave cradle for the glass orb to rest in
-    const cradleMat = new THREE.MeshStandardMaterial({
-      color: 0x121110,
-      roughness: 0.6,
-      metalness: 0.4,
+    const darkMetalMat = new THREE.MeshStandardMaterial({
+      color: 0x181716,
+      roughness: 0.45,
+      metalness: 0.7,
     });
-    const cradleGeo = new THREE.CylinderGeometry(0.08, 0.065, 0.008, 36);
-    const cradle = new THREE.Mesh(cradleGeo, cradleMat);
-    cradle.position.set(0, 0.035, 0);
+
+    // 1. Base plinth: Subdued matte platform beneath logs
+    const plinth = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.13, 0.138, 0.012, 36),
+      darkMetalMat
+    );
+    plinth.position.set(0, 0.006, 0);
+    plinth.receiveShadow = true;
+    this.dockGroup.add(plinth);
+
+    // 2. Firewood log bundle: 7 architectural logs arranged horizontally and radially to cradle the orb
+    const logRadius = 0.018;
+    const logLength = 0.17;
+    const logGeo = new THREE.CylinderGeometry(logRadius * 0.95, logRadius, logLength, 16);
+
+    // Positions of log segments creating a natural tiered wooden cradle
+    const logConfigs = [
+      // Base layer logs
+      { x: -0.055, y: 0.018, z: 0.025, rotZ: Math.PI / 2, rotY: 0.12 },
+      { x: 0.055, y: 0.018, z: 0.025, rotZ: Math.PI / 2, rotY: -0.12 },
+      { x: -0.065, y: 0.018, z: -0.035, rotZ: Math.PI / 2, rotY: -0.08 },
+      { x: 0.065, y: 0.018, z: -0.035, rotZ: Math.PI / 2, rotY: 0.08 },
+      // Upper cradle logs forming the seat
+      { x: -0.052, y: 0.036, z: 0.0, rotZ: Math.PI / 2, rotY: 0.0 },
+      { x: 0.052, y: 0.036, z: 0.0, rotZ: Math.PI / 2, rotY: 0.0 },
+      { x: 0.0, y: 0.022, z: -0.058, rotX: Math.PI / 2, rotY: 0.0 },
+    ];
+
+    logConfigs.forEach(cfg => {
+      const log = new THREE.Mesh(logGeo, woodMat);
+      log.position.set(cfg.x, cfg.y, cfg.z);
+      if (cfg.rotZ) log.rotation.z = cfg.rotZ;
+      if (cfg.rotX) log.rotation.x = cfg.rotX;
+      if (cfg.rotY) log.rotation.y = cfg.rotY;
+      log.castShadow = true;
+      log.receiveShadow = true;
+      this.dockGroup.add(log);
+    });
+
+    // 3. Central bronze cradle seat where the orb rests securely
+    const cradleGeo = new THREE.CylinderGeometry(0.075, 0.062, 0.012, 32);
+    const cradle = new THREE.Mesh(cradleGeo, bronzeMat);
+    cradle.position.set(0, 0.034, 0);
     this.dockGroup.add(cradle);
 
-    // Bronze chamfer accent ring
-    const ringGeo = new THREE.TorusGeometry(0.082, 0.003, 16, 48);
-    const ringMesh = new THREE.Mesh(ringGeo, bronzeMat);
-    ringMesh.rotation.x = Math.PI / 2;
-    ringMesh.position.set(0, 0.038, 0);
-    this.dockGroup.add(ringMesh);
+    // Inner soft felt resting pad inside cradle
+    const padMat = new THREE.MeshStandardMaterial({ color: 0x12100e, roughness: 0.9 });
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.003, 32), padMat);
+    pad.position.set(0, 0.040, 0);
+    this.dockGroup.add(pad);
 
-    // Luminescent breathing dock status ring
-    const glowRingMat = new THREE.MeshBasicMaterial({
-      color: 0xffddaa,
-      transparent: true,
-      opacity: 0.7,
-    });
-    const glowRing = new THREE.Mesh(new THREE.TorusGeometry(0.076, 0.002, 16, 48), glowRingMat);
-    glowRing.rotation.x = Math.PI / 2;
-    glowRing.position.set(0, 0.0385, 0);
-    this.dockGroup.add(glowRing);
+    // Warm bronze joinery ring clasping the firewood cradle
+    const bandGeo = new THREE.TorusGeometry(0.078, 0.0025, 12, 36);
+    const band = new THREE.Mesh(bandGeo, bronzeMat);
+    band.rotation.x = Math.PI / 2;
+    band.position.set(0, 0.038, 0);
+    this.dockGroup.add(band);
 
-    // Front horizontal edible-film printer slot (width 0.075m, height 0.006m)
-    const slotMat = new THREE.MeshBasicMaterial({ color: 0x0a0a0a });
-    const slotMesh = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.006, 0.01), slotMat);
-    slotMesh.position.set(0, 0.024, 0.125);
+    // 4. Integrated Edible-Film Printer Slot: built neatly into front bronze bezel
+    const printerBezel = new THREE.Mesh(
+      new THREE.BoxGeometry(0.082, 0.016, 0.018),
+      bronzeMat
+    );
+    printerBezel.position.set(0, 0.024, 0.105);
+    this.dockGroup.add(printerBezel);
+
+    const slotMat = new THREE.MeshBasicMaterial({ color: 0x050505 });
+    const slotMesh = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.005, 0.012), slotMat);
+    slotMesh.position.set(0, 0.024, 0.11);
     this.dockGroup.add(slotMesh);
 
-    // Precision printer motorized hatch
-    const hatchMat = new THREE.MeshStandardMaterial({ color: 0x2e2a26, roughness: 0.3, metalness: 0.7 });
-    this.printerSlotHatch = new THREE.Mesh(new THREE.BoxGeometry(0.076, 0.007, 0.004), hatchMat);
-    this.printerSlotHatch.position.set(0, 0.024, 0.129);
+    // Motorized precision printer hatch
+    const hatchMat = new THREE.MeshStandardMaterial({ color: 0x221f1d, roughness: 0.4, metalness: 0.8 });
+    this.printerSlotHatch = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.006, 0.003), hatchMat);
+    this.printerSlotHatch.position.set(0, 0.024, 0.114);
     this.dockGroup.add(this.printerSlotHatch);
 
-    // Subtle atmospheric mist micro-perforations ring
-    const mistRingMat = new THREE.MeshBasicMaterial({ color: 0x443b33 });
-    const mistRing = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.0015, 12, 48), mistRingMat);
-    mistRing.rotation.x = Math.PI / 2;
-    mistRing.position.set(0, 0.038, 0);
-    this.dockGroup.add(mistRing);
+    // 5. Warm ember glow between the firewood billets
+    const emberMat = new THREE.MeshBasicMaterial({
+      color: 0xffaa44,
+      transparent: true,
+      opacity: 0.45,
+    });
+    const emberBed = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.004, 24), emberMat);
+    emberBed.position.set(0, 0.015, 0);
+    this.dockGroup.add(emberBed);
 
-    // Soft warm dock illumination light
-    this.dockRingLight = new THREE.PointLight(0xffd499, 0.65, 1.2, 2.0);
-    this.dockRingLight.position.set(0, 0.08, 0);
+    this.dockRingLight = new THREE.PointLight(0xffbe6b, 0.8, 1.2, 2.0);
+    this.dockRingLight.position.set(0, 0.07, 0);
     this.dockGroup.add(this.dockRingLight);
   }
 
+  /**
+   * Physically convincing Glass Orb
+   */
   private buildGlassOrb() {
-    // Physically convincing glass orb (radius 0.075m = 15cm diameter)
-    const orbRadius = 0.075;
+    const orbRadius = 0.075; // 15cm diameter
 
-    // 1. Outer Physical Glass Shell with transmission & clearcoat
+    // 1. Outer Physical Glass Shell
     const glassMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      transmission: 0.95,
+      transmission: 0.94,
       opacity: 1.0,
       transparent: true,
-      roughness: 0.04,
-      metalness: 0.08,
-      ior: 1.55,
-      thickness: 0.09,
+      roughness: 0.035,
+      metalness: 0.05,
+      ior: 1.54,
+      thickness: 0.085,
       clearcoat: 1.0,
       clearcoatRoughness: 0.02,
       depthWrite: false,
@@ -181,7 +228,6 @@ export class DockAndOrb {
     ];
 
     for (let i = 0; i < particleCount; i++) {
-      // Uniform random inside sphere of radius orbRadius * 0.65
       const u = Math.random();
       const r = Math.cbrt(u) * (orbRadius * 0.62);
       const theta = Math.random() * Math.PI * 2;
@@ -217,126 +263,186 @@ export class DockAndOrb {
     this.orbGroup.add(this.orbInternalLight);
   }
 
-  private buildAccomplishments() {
-    // A readable glass-style recognition tab floating just to the right of the orb.
-    this.accomplishmentsCanvas = document.createElement('canvas');
-    this.accomplishmentsCanvas.width = 1024;
-    this.accomplishmentsCanvas.height = 768;
+  /**
+   * Internal holographic display placed INSIDE the orb volume
+   */
+  private buildInternalDisplay() {
+    this.displayCanvas = document.createElement('canvas');
+    this.displayCanvas.width = 1024;
+    this.displayCanvas.height = 1024;
 
-    this.accomplishmentsTexture = new THREE.CanvasTexture(this.accomplishmentsCanvas);
-    this.accomplishmentsTexture.colorSpace = THREE.SRGBColorSpace;
+    this.displayTexture = new THREE.CanvasTexture(this.displayCanvas);
+    this.displayTexture.colorSpace = THREE.SRGBColorSpace;
+    this.displayTexture.generateMipmaps = true;
 
-    const cardMat = new THREE.MeshBasicMaterial({
-      map: this.accomplishmentsTexture,
+    const displayMat = new THREE.MeshBasicMaterial({
+      map: this.displayTexture,
       transparent: true,
       opacity: 0.0,
       depthWrite: false,
       side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
     });
 
-    const cardGeo = new THREE.PlaneGeometry(0.52, 0.39);
-    this.accomplishmentsPlane = new THREE.Mesh(cardGeo, cardMat);
-    this.accomplishmentsPlane.position.set(this.dockPosition.x + 0.43, this.orbHoverY, this.dockPosition.z);
-    this.accomplishmentsPlane.renderOrder = 3;
-    this.accomplishmentsPlane.visible = false;
-    this.group.add(this.accomplishmentsPlane);
+    // Sized to sit fully within the 0.15m orb diameter (0.108m x 0.108m)
+    const cardGeo = new THREE.PlaneGeometry(0.108, 0.108);
+    this.internalDisplayPlane = new THREE.Mesh(cardGeo, displayMat);
+    this.internalDisplayPlane.position.set(0, 0, 0); // At geometric center of orb
+    this.internalDisplayPlane.renderOrder = 4;
+    this.internalDisplayPlane.visible = false;
+    this.orbGroup.add(this.internalDisplayPlane);
   }
 
-  public renderAccomplishmentsText(fade: number) {
-    const ctx = this.accomplishmentsCanvas.getContext('2d')!;
-    ctx.clearRect(0, 0, 1024, 768);
+  /**
+   * Render Stage 1 completed tasks INSIDE the orb volume
+   */
+  public renderAccomplishmentsInsideOrb(fade: number) {
+    this.currentDisplayMode = 'accomplishments';
+    const ctx = this.displayCanvas.getContext('2d')!;
+    ctx.clearRect(0, 0, 1024, 1024);
 
     if (fade <= 0.01) {
-      this.accomplishmentsTexture.needsUpdate = true;
+      this.displayTexture.needsUpdate = true;
+      if (this.internalDisplayPlane) {
+        this.internalDisplayPlane.visible = false;
+      }
       return;
     }
 
     ctx.save();
     ctx.globalAlpha = Math.min(1.0, fade);
 
-    // Restrained translucent glass panel with a warm, luminous edge.
-    const left = 24;
-    const top = 24;
-    const width = 976;
-    const height = 720;
-    const radius = 34;
-
-    ctx.shadowColor = 'rgba(255, 196, 120, 0.22)';
-    ctx.shadowBlur = 24;
+    // Luminous ethereal circular disc within the orb
+    const discGrad = ctx.createRadialGradient(512, 512, 40, 512, 512, 490);
+    discGrad.addColorStop(0, 'rgba(255, 235, 195, 0.22)');
+    discGrad.addColorStop(0.55, 'rgba(235, 180, 110, 0.12)');
+    discGrad.addColorStop(0.85, 'rgba(20, 18, 16, 0.35)');
+    discGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = discGrad;
     ctx.beginPath();
-    ctx.moveTo(left + radius, top);
-    ctx.lineTo(left + width - radius, top);
-    ctx.quadraticCurveTo(left + width, top, left + width, top + radius);
-    ctx.lineTo(left + width, top + height - radius);
-    ctx.quadraticCurveTo(left + width, top + height, left + width - radius, top + height);
-    ctx.lineTo(left + radius, top + height);
-    ctx.quadraticCurveTo(left, top + height, left, top + height - radius);
-    ctx.lineTo(left, top + radius);
-    ctx.quadraticCurveTo(left, top, left + radius, top);
-    ctx.closePath();
-
-    const glassGradient = ctx.createLinearGradient(0, top, 1024, top + height);
-    glassGradient.addColorStop(0, 'rgba(38, 35, 33, 0.94)');
-    glassGradient.addColorStop(0.55, 'rgba(25, 28, 31, 0.91)');
-    glassGradient.addColorStop(1, 'rgba(44, 35, 29, 0.94)');
-    ctx.fillStyle = glassGradient;
+    ctx.arc(512, 512, 490, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(255, 218, 170, 0.62)';
+    // Subtle edge ring
+    ctx.strokeStyle = 'rgba(255, 225, 165, 0.45)';
     ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(512, 512, 460, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Fine inner highlight.
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    // Title Header
+    ctx.textAlign = 'center';
+    ctx.font = '600 38px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#f5c982';
+    ctx.fillText("TODAY'S ACCOMPLISHMENTS", 512, 175);
+
+    ctx.strokeStyle = 'rgba(245, 201, 130, 0.45)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(58, 58);
-    ctx.lineTo(966, 58);
+    ctx.moveTo(220, 215);
+    ctx.lineTo(804, 215);
     ctx.stroke();
 
-    // Header.
-    ctx.textAlign = 'left';
-    ctx.font = '600 32px "Space Grotesk", sans-serif';
-    ctx.fillStyle = '#f0c27b';
-    ctx.fillText("TODAY'S RECOGNITION", 92, 116);
-
-    ctx.strokeStyle = 'rgba(240, 194, 123, 0.42)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(92, 150);
-    ctx.lineTo(932, 150);
-    ctx.stroke();
-
-    // Preserve the original accomplishments, with larger type for readability.
+    // 3 Required Sample Accomplishments
     const items = [
-      { title: 'Earpiece', detail: 'Completed the 3D modelling.', y: 238 },
-      { title: 'Project 1', detail: 'Arranged a meeting with clients.', y: 378 },
-      { title: 'Project 2', detail: 'Began sketching ideas.', y: 518 },
+      { project: '• Earpiece', detail: 'Completed the 3D modelling.', y: 310 },
+      { project: '• Project 1', detail: 'Arranged a meeting with clients.', y: 440 },
+      { project: '• Project 2', detail: 'Began sketching ideas.', y: 570 },
     ];
 
-    items.forEach((item) => {
-      ctx.beginPath();
-      ctx.fillStyle = '#f0c27b';
-      ctx.arc(104, item.y - 12, 8, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.font = '700 38px "Plus Jakarta Sans", sans-serif';
+    items.forEach(item => {
+      ctx.textAlign = 'left';
+      ctx.font = '700 42px "Plus Jakarta Sans", sans-serif';
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(item.title, 132, item.y);
+      ctx.fillText(item.project, 165, item.y);
 
-      ctx.font = '400 29px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = '#e2d7cb';
-      ctx.fillText(item.detail, 132, item.y + 42);
+      ctx.font = '400 34px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = '#e8ded2';
+      ctx.fillText(item.detail, 205, item.y + 48);
     });
 
+    // Quote message: "Every step counts, even the ones that are just beginning."
     ctx.textAlign = 'center';
-    ctx.font = 'italic 500 27px "Playfair Display", Georgia, serif';
-    ctx.fillStyle = '#ffe9c4';
-    ctx.fillText('"Every step counts, even the ones that are just beginning."', 512, 690);
+    ctx.font = 'italic 500 36px "Playfair Display", Georgia, serif';
+    ctx.fillStyle = '#ffdfa0';
+    ctx.fillText('"Every step counts,', 512, 755);
+    ctx.fillText('even the ones that are just beginning."', 512, 805);
 
     ctx.restore();
-    this.accomplishmentsTexture.needsUpdate = true;
+    this.displayTexture.needsUpdate = true;
+
+    if (this.internalDisplayPlane) {
+      (this.internalDisplayPlane.material as THREE.MeshBasicMaterial).opacity = fade * 0.95;
+      this.internalDisplayPlane.visible = fade > 0.01;
+    }
+  }
+
+  /**
+   * Render Stage 3 Words of Wisdom INSIDE the orb volume
+   */
+  public renderWisdomInsideOrb(fade: number) {
+    this.currentDisplayMode = 'wisdom';
+    const ctx = this.displayCanvas.getContext('2d')!;
+    ctx.clearRect(0, 0, 1024, 1024);
+
+    if (fade <= 0.01) {
+      this.displayTexture.needsUpdate = true;
+      if (this.internalDisplayPlane) {
+        this.internalDisplayPlane.visible = false;
+      }
+      return;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = Math.min(1.0, fade);
+
+    // Warm peaceful golden aura inside the orb
+    const discGrad = ctx.createRadialGradient(512, 512, 40, 512, 512, 480);
+    discGrad.addColorStop(0, 'rgba(255, 235, 180, 0.32)');
+    discGrad.addColorStop(0.6, 'rgba(240, 180, 95, 0.16)');
+    discGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = discGrad;
+    ctx.beginPath();
+    ctx.arc(512, 512, 480, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Subtle wisdom emblem / ring
+    ctx.strokeStyle = 'rgba(255, 225, 160, 0.5)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(512, 512, 440, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.font = '600 36px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#f5c982';
+    ctx.textAlign = 'center';
+    ctx.fillText('CLOSING WISDOM', 512, 290);
+
+    ctx.strokeStyle = 'rgba(245, 201, 130, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(340, 330);
+    ctx.lineTo(684, 330);
+    ctx.stroke();
+
+    // Central quote
+    ctx.font = 'italic 500 52px "Playfair Display", Georgia, serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('"A calmer mind creates', 512, 480);
+    ctx.fillText('a brighter tomorrow."', 512, 555);
+
+    // Subtle decorative lotus/calm spark
+    ctx.font = '400 30px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#e8cca0';
+    ctx.fillText('— EXORA RITUAL —', 512, 700);
+
+    ctx.restore();
+    this.displayTexture.needsUpdate = true;
+
+    if (this.internalDisplayPlane) {
+      (this.internalDisplayPlane.material as THREE.MeshBasicMaterial).opacity = fade * 0.95;
+      this.internalDisplayPlane.visible = fade > 0.01;
+    }
   }
 
   public materialize() {
@@ -367,7 +473,6 @@ export class DockAndOrb {
     // Gentle hover physics when not grabbed
     if (!this.isGrabbed) {
       if (!this.isDocked) {
-        // Natural hovering float
         const bob = Math.sin(time * 1.5) * 0.012;
         this.currentOrbTarget.y = this.orbHoverY + bob;
       }
@@ -386,30 +491,17 @@ export class DockAndOrb {
       (this.innerCoreSphere.material as THREE.MeshBasicMaterial).opacity = pulse;
     }
 
-    // Keep the floating recognition tab facing the seated participant.
-    if (this.accomplishmentsPlane && this.accomplishmentsPlane.visible) {
-      this.accomplishmentsPlane.lookAt(cameraPosition);
+    // Orient internal holographic display toward camera eye
+    if (this.internalDisplayPlane && this.internalDisplayPlane.visible) {
+      this.internalDisplayPlane.lookAt(cameraPosition);
     }
   }
 
-  public showAccomplishments(fade: number) {
-    // Use the same progress value for opacity, scale and position so the tab
-    // appears to emerge from the orb and retract back into it.
-    const progress = THREE.MathUtils.clamp(fade, 0, 1);
-    this.renderAccomplishmentsText(progress);
-    if (this.accomplishmentsPlane) {
-      const orbCenter = this.orbGroup.position;
-      const expandedPosition = new THREE.Vector3(
-        this.dockPosition.x + 0.43,
-        this.orbHoverY,
-        this.dockPosition.z
-      );
-
-      this.accomplishmentsPlane.position.lerpVectors(orbCenter, expandedPosition, progress);
-      const scale = THREE.MathUtils.lerp(0.08, 1, THREE.MathUtils.smoothstep(progress, 0, 1));
-      this.accomplishmentsPlane.scale.setScalar(scale);
-      (this.accomplishmentsPlane.material as THREE.MeshBasicMaterial).opacity = progress;
-      this.accomplishmentsPlane.visible = progress > 0.01;
+  public clearInternalDisplay() {
+    this.currentDisplayMode = 'none';
+    if (this.internalDisplayPlane) {
+      this.internalDisplayPlane.visible = false;
+      (this.internalDisplayPlane.material as THREE.MeshBasicMaterial).opacity = 0;
     }
   }
 }

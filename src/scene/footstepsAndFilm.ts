@@ -1,6 +1,6 @@
 /**
- * EXORA Stage 3: Glowing Footsteps, Edible-Film Printing & Ritual Choices
- * Implements progressive doorway footsteps, 3D printed edible film emergence,
+ * EXORA Stage 3: Glowing Footsteps, Circular Edible-Film Printing & Ritual Choices
+ * Implements progressive doorway footsteps, circular printed edible film with wisdom inscription,
  * and dual takeaway rituals (Eat or Dissolve in water glass).
  */
 
@@ -12,12 +12,15 @@ export class FootstepsAndFilm {
   private footstepsGroup: THREE.Group;
   private footstepMeshes: THREE.Mesh[] = [];
 
-  // Edible film
+  // Circular Edible Film
   public edibleFilmGroup: THREE.Group;
   public edibleFilmMesh!: THREE.Mesh;
   public edibleFilmHitArea!: THREE.Mesh;
-  // Edible film rests just beyond the printer slot at the centered, far-side dock.
-  public filmInitialPos = new THREE.Vector3(0, 0.74 + 0.024, -0.2 + 0.14);
+  private filmCanvas!: HTMLCanvasElement;
+  private filmTexture!: THREE.CanvasTexture;
+
+  // The circular film rests just in front of the firewood dock printer slot
+  public readonly filmInitialPos = new THREE.Vector3(0, 0.74 + 0.002, -0.23 + 0.155);
   public isFilmPrinted: boolean = false;
   public isFilmGrabbed: boolean = false;
   public isFilmConsumed: boolean = false;
@@ -48,7 +51,7 @@ export class FootstepsAndFilm {
     this.group.add(this.edibleFilmGroup);
 
     this.buildFootstepsPath();
-    this.buildEdibleFilm();
+    this.buildCircularEdibleFilm();
     this.buildDoorwayGlow();
     this.buildEffervescenceParticles();
 
@@ -59,10 +62,10 @@ export class FootstepsAndFilm {
     // The trail begins at the orb on the tabletop, exits over the right edge,
     // then follows the desk's right side across the floor toward the doorway.
     const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.0, 0.746, -0.2),
-      new THREE.Vector3(0.28, 0.746, -0.2),
-      new THREE.Vector3(0.58, 0.746, -0.2),
-      new THREE.Vector3(0.82, 0.746, -0.2),
+      new THREE.Vector3(0.0, 0.746, -0.23),
+      new THREE.Vector3(0.28, 0.746, -0.23),
+      new THREE.Vector3(0.58, 0.746, -0.23),
+      new THREE.Vector3(0.82, 0.746, -0.23),
       // Keep floor-level footprints clearly above both the rug surface (y = 0.005)
       // and the room floor so the translucent decals cannot appear buried or z-fight.
       new THREE.Vector3(1.02, 0.025, -0.28),
@@ -77,7 +80,6 @@ export class FootstepsAndFilm {
     const footstepTex = createFootstepTexture();
 
     stepPoints.forEach((pt, i) => {
-      // Alternate left and right foot offset perpendicular to the walking direction.
       const nextPt = stepPoints[Math.min(stepPoints.length - 1, i + 1)];
       const tangent = new THREE.Vector3().subVectors(nextPt, pt).normalize();
       const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
@@ -96,44 +98,93 @@ export class FootstepsAndFilm {
       const mesh = new THREE.Mesh(geo, mat);
       mesh.rotation.x = -Math.PI / 2;
 
-      // Align each footprint along the route.
       const angle = Math.atan2(tangent.x, tangent.z);
       mesh.rotation.z = angle + Math.PI;
 
       mesh.position.copy(footPos);
-      // Draw the translucent glow after the rug while retaining depth testing
-      // against actual room geometry.
       mesh.renderOrder = 2;
       this.footstepsGroup.add(mesh);
       this.footstepMeshes.push(mesh);
     });
   }
 
-  private buildEdibleFilm() {
-    // Thin translucent edible film (40mm x 30mm x 0.4mm)
-    // Plausible 2046 edible micronutrient film
+  /**
+   * Circular Edible Film with concentric micronutrient rings and inscribed wisdom quote
+   */
+  private buildCircularEdibleFilm() {
     this.edibleFilmGroup.position.copy(this.filmInitialPos);
 
+    // Render inscribed circular canvas
+    this.filmCanvas = document.createElement('canvas');
+    this.filmCanvas.width = 512;
+    this.filmCanvas.height = 512;
+    const ctx = this.filmCanvas.getContext('2d')!;
+
+    // Golden translucent circular disc
+    const grad = ctx.createRadialGradient(256, 256, 10, 256, 256, 250);
+    grad.addColorStop(0, 'rgba(255, 235, 185, 0.95)');
+    grad.addColorStop(0.7, 'rgba(240, 195, 120, 0.88)');
+    grad.addColorStop(1, 'rgba(220, 160, 80, 0.92)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(256, 256, 248, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Fine concentric micro-nutrient rings
+    ctx.strokeStyle = 'rgba(180, 130, 60, 0.4)';
+    ctx.lineWidth = 1.5;
+    for (let r = 50; r < 240; r += 32) {
+      ctx.beginPath();
+      ctx.arc(256, 256, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Outer golden edge ring
+    ctx.strokeStyle = '#c68e3c';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(256, 256, 244, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Inscribed Words of Wisdom
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#4a3319';
+    ctx.font = 'bold 22px "Space Grotesk", sans-serif';
+    ctx.fillText('EXORA // 2046', 256, 165);
+
+    ctx.font = 'italic 500 24px "Playfair Display", Georgia, serif';
+    ctx.fillText('"A calmer mind creates', 256, 245);
+    ctx.fillText('a brighter tomorrow."', 256, 285);
+
+    ctx.font = '500 16px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#7a5a32';
+    ctx.fillText('EDIBLE BOTANICAL EXTRACT', 256, 360);
+
+    this.filmTexture = new THREE.CanvasTexture(this.filmCanvas);
+    this.filmTexture.colorSpace = THREE.SRGBColorSpace;
+
+    // Disc material (translucent edible biopolymer)
     const filmMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffe2b8,
-      transmission: 0.78,
-      opacity: 0.85,
+      map: this.filmTexture,
+      color: 0xfff0d0,
+      transmission: 0.65,
+      opacity: 0.92,
       transparent: true,
-      roughness: 0.18,
-      metalness: 0.05,
-      ior: 1.45,
-      clearcoat: 0.6,
+      roughness: 0.22,
+      metalness: 0.08,
+      ior: 1.48,
+      clearcoat: 0.7,
       depthWrite: false,
       side: THREE.DoubleSide,
     });
 
-    const filmGeo = new THREE.BoxGeometry(0.052, 0.0006, 0.038);
+    // Circular wafer geometry: radius 0.028m (~56mm diameter), height 0.0006m
+    const filmGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.0006, 40);
     this.edibleFilmMesh = new THREE.Mesh(filmGeo, filmMat);
     this.edibleFilmGroup.add(this.edibleFilmMesh);
 
-    // Invisible, slightly larger interaction surface makes hand pinching practical
-    // without changing the visible dimensions of the edible film.
-    const hitGeo = new THREE.PlaneGeometry(0.12, 0.10);
+    // Generous circular hit area (radius 0.055m = 110mm diameter)
+    const hitGeo = new THREE.CircleGeometry(0.055, 32);
     const hitMat = new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 0,
@@ -145,19 +196,9 @@ export class FootstepsAndFilm {
     this.edibleFilmHitArea.rotation.x = -Math.PI / 2;
     this.edibleFilmHitArea.position.y = 0.001;
     this.edibleFilmGroup.add(this.edibleFilmHitArea);
-
-    // Subtle golden nutritional micro-grid line pattern
-    const lineMat = new THREE.LineBasicMaterial({ color: 0xe6b870, transparent: true, opacity: 0.5 });
-    const lineGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(-0.024, 0.0004, 0),
-      new THREE.Vector3(0.024, 0.0004, 0),
-    ]);
-    const lineMesh = new THREE.Line(lineGeo, lineMat);
-    this.edibleFilmGroup.add(lineMesh);
   }
 
   private buildDoorwayGlow() {
-    // Ethereal vertical warm glow sheet standing inside the open doorway
     const glowGeo = new THREE.PlaneGeometry(1.2, 2.3);
     const glowMat = new THREE.MeshBasicMaterial({
       color: 0xffbe72,
@@ -174,7 +215,6 @@ export class FootstepsAndFilm {
   }
 
   private buildEffervescenceParticles() {
-    // Water effervescence bubbles inside desk water glass (x: -0.34, y: 0.74, z: 0.12)
     const count = 90;
     const geo = new THREE.BufferGeometry();
     const pos = new Float32Array(count * 3);
@@ -217,21 +257,20 @@ export class FootstepsAndFilm {
   public printEdibleFilm() {
     this.isFilmPrinted = true;
     this.edibleFilmGroup.visible = true;
-    // Animate film sliding smoothly out of printer slot
-    this.edibleFilmGroup.position.set(0, 0.74 + 0.024, -0.2 + 0.08);
+    // Film emerges smoothly from the front dock slot
+    this.edibleFilmGroup.position.set(0, 0.74 + 0.024, -0.23 + 0.09);
   }
 
   public triggerDissolveInWater() {
     this.isFilmDissolved = true;
     this.isEffervescing = true;
     this.effervescenceTime = 0;
-    // Animate film dissolving into the water
+    // Animate film dissolving into the water glass
     this.edibleFilmGroup.position.set(-0.5, 0.74 + 0.08, -0.2);
   }
 
   public triggerConsumeFilm() {
     this.isFilmConsumed = true;
-    // Scale down & fade out toward user
     this.edibleFilmGroup.position.set(0, 1.1, 0.4);
   }
 
@@ -250,7 +289,6 @@ export class FootstepsAndFilm {
 
         this.currentStepIndex++;
 
-        // Increase doorway warm glow as steps approach
         const glowFactor = this.currentStepIndex / this.footstepMeshes.length;
         (this.doorwayGlowMesh.material as THREE.MeshBasicMaterial).opacity = glowFactor * 0.35;
 
@@ -260,7 +298,7 @@ export class FootstepsAndFilm {
       }
     }
 
-    // 2. Film extrusion animation
+    // 2. Film extrusion onto desk
     if (this.isFilmPrinted && !this.isFilmGrabbed && !this.isFilmConsumed && !this.isFilmDissolved) {
       this.edibleFilmGroup.position.lerp(this.filmInitialPos, Math.min(1.0, delta * 3.5));
     }
@@ -276,16 +314,15 @@ export class FootstepsAndFilm {
       for (let i = 0; i < pos.count; i++) {
         let y = pos.getY(i) + vel.getY(i) * delta;
         if (y > 0.74 + 0.1) {
-          y = 0.74 + 0.02; // wrap back down in glass
+          y = 0.74 + 0.02;
         }
         pos.setY(i, y);
       }
       pos.needsUpdate = true;
 
-      // Dissolve edible film mesh
       if (this.edibleFilmMesh) {
         const fMat = this.edibleFilmMesh.material as THREE.MeshPhysicalMaterial;
-        fMat.opacity = Math.max(0, 0.85 * (1 - this.effervescenceTime / 2.0));
+        fMat.opacity = Math.max(0, 0.92 * (1 - this.effervescenceTime / 2.0));
         const s = Math.max(0.01, 1 - this.effervescenceTime / 2.0);
         this.edibleFilmMesh.scale.set(s, s, s);
       }
@@ -324,7 +361,7 @@ export class FootstepsAndFilm {
     this.edibleFilmGroup.visible = false;
     this.edibleFilmGroup.position.copy(this.filmInitialPos);
     this.edibleFilmMesh.scale.set(1, 1, 1);
-    (this.edibleFilmMesh.material as THREE.MeshPhysicalMaterial).opacity = 0.85;
+    (this.edibleFilmMesh.material as THREE.MeshPhysicalMaterial).opacity = 0.92;
     (this.bubblesSystem.material as THREE.PointsMaterial).opacity = 0;
   }
 }
