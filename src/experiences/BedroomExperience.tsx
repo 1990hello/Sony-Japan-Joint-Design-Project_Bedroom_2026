@@ -4,13 +4,13 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { ExperienceScene } from './scene/ExperienceScene';
-import { handTracker } from './tracking/handTracker';
-import { soundscape } from './audio/soundscape';
-import { InstructionDock } from './components/InstructionDock';
-import { TopBar } from './components/TopBar';
-import { NarrationOverlay } from './components/NarrationOverlay';
-import { ExperienceStage, HandGestureState } from './types';
+import { ExperienceScene } from '../scene/ExperienceScene';
+import { handTracker } from '../tracking/handTracker';
+import { soundscape } from '../audio/soundscape';
+import { InstructionDock } from '../components/InstructionDock';
+import { TopBar } from '../components/TopBar';
+import { NarrationOverlay } from '../components/NarrationOverlay';
+import { ExperienceStage, HandGestureState } from '../types';
 
 export default function App() {
   const canvasMountRef = useRef<HTMLDivElement>(null);
