@@ -25,7 +25,8 @@ export class DockAndOrb {
   public printerSlotHatch!: THREE.Mesh;
 
   // Coordinates on desk
-  public readonly dockPosition = new THREE.Vector3(0, 0.74, -0.23);
+  // Shifted 12cm toward the back of the extended desk, farther from the seated user.
+  public readonly dockPosition = new THREE.Vector3(0, 0.74, -0.35);
   public readonly orbHoverY = 0.74 + 0.24; // Hover height above cradle
   public currentOrbTarget = new THREE.Vector3();
   public orbVelocity = new THREE.Vector3();
