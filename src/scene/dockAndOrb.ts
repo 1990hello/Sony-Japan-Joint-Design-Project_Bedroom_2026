@@ -281,7 +281,8 @@ export class DockAndOrb {
       opacity: 0.0,
       depthWrite: false,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
+      // Normal blending preserves dark text outlines for legibility against the bright orb.
+      blending: THREE.NormalBlending,
     });
 
     // Sized to sit fully within the 0.15m orb diameter (0.108m x 0.108m)
@@ -333,8 +334,15 @@ export class DockAndOrb {
     // Title Header
     ctx.textAlign = 'center';
     ctx.font = '600 38px "Space Grotesk", sans-serif';
-    ctx.fillStyle = '#f5c982';
+    ctx.fillStyle = '#9beeff';
+    ctx.strokeStyle = 'rgba(5, 24, 43, 0.98)';
+    ctx.lineWidth = 9;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(0, 12, 28, 0.95)';
+    ctx.shadowBlur = 16;
+    ctx.strokeText("TODAY'S ACCOMPLISHMENTS", 512, 175);
     ctx.fillText("TODAY'S ACCOMPLISHMENTS", 512, 175);
+    ctx.shadowBlur = 0;
 
     ctx.strokeStyle = 'rgba(245, 201, 130, 0.45)';
     ctx.lineWidth = 2;
@@ -353,20 +361,37 @@ export class DockAndOrb {
     items.forEach(item => {
       ctx.textAlign = 'left';
       ctx.font = '700 42px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = '#eafaff';
+      ctx.strokeStyle = 'rgba(5, 24, 43, 0.98)';
+      ctx.lineWidth = 8;
+      ctx.lineJoin = 'round';
+      ctx.shadowColor = 'rgba(0, 12, 28, 0.95)';
+      ctx.shadowBlur = 13;
+      ctx.strokeText(item.project, 165, item.y);
       ctx.fillText(item.project, 165, item.y);
 
       ctx.font = '400 34px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = '#e8ded2';
+      ctx.fillStyle = '#c9f5ff';
+      ctx.lineWidth = 7;
+      ctx.strokeText(item.detail, 205, item.y + 48);
       ctx.fillText(item.detail, 205, item.y + 48);
+      ctx.shadowBlur = 0;
     });
 
     // Quote message: "Every step counts, even the ones that are just beginning."
     ctx.textAlign = 'center';
     ctx.font = 'italic 500 36px "Playfair Display", Georgia, serif';
-    ctx.fillStyle = '#ffdfa0';
+    ctx.fillStyle = '#a9f2ff';
+    ctx.strokeStyle = 'rgba(5, 24, 43, 0.98)';
+    ctx.lineWidth = 8;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(0, 12, 28, 0.95)';
+    ctx.shadowBlur = 14;
+    ctx.strokeText('"Every step counts,', 512, 755);
+    ctx.strokeText('even the ones that are just beginning."', 512, 805);
     ctx.fillText('"Every step counts,', 512, 755);
     ctx.fillText('even the ones that are just beginning."', 512, 805);
+    ctx.shadowBlur = 0;
 
     ctx.restore();
     this.displayTexture.needsUpdate = true;
@@ -414,9 +439,16 @@ export class DockAndOrb {
     ctx.stroke();
 
     ctx.font = '600 36px "Space Grotesk", sans-serif';
-    ctx.fillStyle = '#f5c982';
+    ctx.fillStyle = '#9beeff';
     ctx.textAlign = 'center';
+    ctx.strokeStyle = 'rgba(5, 24, 43, 0.98)';
+    ctx.lineWidth = 9;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(0, 12, 28, 0.95)';
+    ctx.shadowBlur = 16;
+    ctx.strokeText('CLOSING WISDOM', 512, 290);
     ctx.fillText('CLOSING WISDOM', 512, 290);
+    ctx.shadowBlur = 0;
 
     ctx.strokeStyle = 'rgba(245, 201, 130, 0.4)';
     ctx.lineWidth = 2;
@@ -427,14 +459,29 @@ export class DockAndOrb {
 
     // Central quote
     ctx.font = 'italic 500 52px "Playfair Display", Georgia, serif';
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#eafaff';
+    ctx.strokeStyle = 'rgba(5, 24, 43, 0.98)';
+    ctx.lineWidth = 10;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(0, 12, 28, 0.98)';
+    ctx.shadowBlur = 18;
+    ctx.strokeText('"A calmer mind creates', 512, 480);
+    ctx.strokeText('a brighter tomorrow."', 512, 555);
     ctx.fillText('"A calmer mind creates', 512, 480);
     ctx.fillText('a brighter tomorrow."', 512, 555);
+    ctx.shadowBlur = 0;
 
     // Subtle decorative lotus/calm spark
     ctx.font = '400 30px "Space Grotesk", sans-serif';
-    ctx.fillStyle = '#e8cca0';
+    ctx.fillStyle = '#b9f3ff';
+    ctx.strokeStyle = 'rgba(5, 24, 43, 0.95)';
+    ctx.lineWidth = 7;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(0, 12, 28, 0.9)';
+    ctx.shadowBlur = 12;
+    ctx.strokeText('— EXORA RITUAL —', 512, 700);
     ctx.fillText('— EXORA RITUAL —', 512, 700);
+    ctx.shadowBlur = 0;
 
     ctx.restore();
     this.displayTexture.needsUpdate = true;
