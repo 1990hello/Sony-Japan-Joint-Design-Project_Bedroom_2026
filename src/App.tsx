@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BedroomExperience from './experiences/BedroomExperience';
 import AquariumExperience from './aquarium/App';
+import { aquariumHandTracker } from './aquarium/services/HandTracker';
 import './aquarium/index.css';
 
 type Experience = 'bedroom' | 'aquarium';
 
 export default function App() {
   const [activeExperience, setActiveExperience] = useState<Experience>('bedroom');
+
+  // Establish the Tasks Vision runtime before either scene can initialise
+  // its own tracker. Bedroom also awaits this same promise on user activation.
+  useEffect(() => {
+    void aquariumHandTracker.prepareModel().catch((error) => {
+      console.warn('Aquarium hand model pre-initialisation failed:', error);
+    });
+  }, []);
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-slate-950">

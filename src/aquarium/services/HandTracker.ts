@@ -126,6 +126,58 @@ export class HandTracker {
   }
 
   /**
+   * Initialise the Tasks Vision WASM runtime before the legacy Bedroom
+   * MediaPipe Hands runtime is allowed to start. Both libraries currently
+   * coexist on the same page and their Emscripten globals are order-sensitive.
+   * Cache the promise so all callers share one initialisation.
+   */
+  private modelInitPromise: Promise<void> | null = null;
+
+  public async prepareModel(): Promise<void> {
+    if (this.landmarker) return;
+    if (this.modelInitPromise) return this.modelInitPromise;
+
+    this.modelInitPromise = (async () => {
+      let visionInstance = null;
+              for (const wasmUrl of WASM_CDN_URLS) {
+                try {
+                  visionInstance = await FilesetResolver.forVisionTasks(wasmUrl);
+                  if (visionInstance) break;
+                } catch (wasmErr) {
+                  console.warn(`FilesetResolver failed with ${wasmUrl}:`, wasmErr);
+                }
+              }
+      
+              if (!visionInstance) {
+                throw new Error('Could not initialize MediaPipe vision tasks WebAssembly resolver.');
+              }
+      
+              startupStage = 'hand landmark model loading';
+      
+              // Use CPU directly for predictable browser startup. A failed GPU
+              // initialisation can leave the Emscripten runtime partially created;
+              // retrying CPU against that same runtime can produce noExitRuntime
+              // errors instead of recovering cleanly.
+              this.landmarker = await HandLandmarker.createFromOptions(visionInstance, {
+                baseOptions: {
+                  modelAssetPath: MODEL_ASSET_URL,
+                  delegate: 'CPU',
+                },
+                runningMode: 'VIDEO',
+                numHands: 2,
+                minHandDetectionConfidence: 0.45,
+                minHandPresenceConfidence: 0.45,
+                minTrackingConfidence: 0.45,
+              });
+    })().catch((error) => {
+      this.modelInitPromise = null;
+      throw error;
+    });
+
+    return this.modelInitPromise;
+  }
+
+  /**
    * Initializes MediaPipe HandLandmarker and requests webcam access.
    */
   public async startTracking(): Promise<boolean> {
@@ -181,40 +233,7 @@ export class HandTracker {
       startupStage = 'MediaPipe WebAssembly loading';
       // 3. Load MediaPipe Hand Landmarker model with CDN fallbacks
       this.setStatus('loading_model', 'Loading hand tracking model...');
-      if (!this.landmarker) {
-        let visionInstance = null;
-        for (const wasmUrl of WASM_CDN_URLS) {
-          try {
-            visionInstance = await FilesetResolver.forVisionTasks(wasmUrl);
-            if (visionInstance) break;
-          } catch (wasmErr) {
-            console.warn(`FilesetResolver failed with ${wasmUrl}:`, wasmErr);
-          }
-        }
-
-        if (!visionInstance) {
-          throw new Error('Could not initialize MediaPipe vision tasks WebAssembly resolver.');
-        }
-
-        startupStage = 'hand landmark model loading';
-
-        // Use CPU directly for predictable browser startup. A failed GPU
-        // initialisation can leave the Emscripten runtime partially created;
-        // retrying CPU against that same runtime can produce noExitRuntime
-        // errors instead of recovering cleanly.
-        this.landmarker = await HandLandmarker.createFromOptions(visionInstance, {
-          baseOptions: {
-            modelAssetPath: MODEL_ASSET_URL,
-            delegate: 'CPU',
-          },
-          runningMode: 'VIDEO',
-          numHands: 2,
-          minHandDetectionConfidence: 0.45,
-          minHandPresenceConfidence: 0.45,
-          minTrackingConfidence: 0.45,
-        });
-      }
-
+      await this.prepareModel();
       this.setStatus('tracking', 'Hand tracking active');
       this.startDetectionLoop();
       return true;
