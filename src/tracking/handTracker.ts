@@ -6,6 +6,7 @@
 
 import { HandGestureState } from '../types';
 import { requestSharedCameraStream, releaseSharedCameraStream } from '../shared/sharedCamera';
+import { aquariumHandTracker } from '../aquarium/services/HandTracker';
 
 export class HandTracker {
   private videoElement: HTMLVideoElement | null = null;
@@ -70,7 +71,19 @@ export class HandTracker {
       this.videoElement.srcObject = this.stream;
       await this.videoElement.play();
 
-      // 3. Initialize MediaPipe Hands
+      // Initialise Aquarium Tasks Vision before legacy MediaPipe Hands.
+      // Its Emscripten runtime must be established first, regardless of the
+      // experience the user chose to open first.
+      try {
+        await aquariumHandTracker.prepareModel();
+      } catch (error) {
+        // Keep Bedroom usable if the Aquarium model cannot be downloaded;
+        // Aquarium will report/retry its own model error when opened.
+        console.warn('Aquarium hand model pre-initialisation failed:', error);
+      }
+
+      // 4. Initialize legacy MediaPipe Hands only after the Tasks Vision
+      // runtime has had its first opportunity to initialise.
       await this.initMediaPipe();
 
       this.isRunning = true;
