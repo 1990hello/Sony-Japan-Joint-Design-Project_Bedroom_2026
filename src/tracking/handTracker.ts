@@ -5,6 +5,7 @@
  */
 
 import { HandGestureState } from '../types';
+import { requestSharedCameraStream, releaseSharedCameraStream } from '../shared/sharedCamera';
 
 export class HandTracker {
   private videoElement: HTMLVideoElement | null = null;
@@ -63,15 +64,8 @@ export class HandTracker {
         this.videoElement = video;
       }
 
-      // 2. Request user webcam stream
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: 'user',
-        },
-        audio: false,
-      });
+      // 2. Reuse the app-wide webcam session shared with Aquarium.
+      this.stream = await requestSharedCameraStream();
 
       this.videoElement.srcObject = this.stream;
       await this.videoElement.play();
@@ -87,12 +81,13 @@ export class HandTracker {
     }
   }
 
-  public stop() {
+  public stop(releaseCamera = false) {
     this.isRunning = false;
-    if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
-      this.stream = null;
-    }
+    const camera = this.cameraUtilsInstance as { stop?: () => void } | null;
+    camera?.stop?.();
+    this.cameraUtilsInstance = null;
+    this.stream = null;
+    if (releaseCamera) releaseSharedCameraStream();
     if (this.videoElement) {
       this.videoElement.srcObject = null;
     }

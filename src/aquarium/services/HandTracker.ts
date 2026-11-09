@@ -4,6 +4,7 @@
  */
 
 import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
+import { requestSharedCameraStream, releaseSharedCameraStream } from '../../shared/sharedCamera';
 
 export type HandTrackerStatus =
   | 'idle'
@@ -138,17 +139,8 @@ export class HandTracker {
     try {
       this.setStatus('requesting', 'Requesting webcam access...');
 
-      // 1. Request Webcam Stream with optimal 640x480 resolution
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: 'user',
-        },
-        audio: false,
-      });
-
-      this.stream = stream;
+      // 1. Reuse the app-wide webcam session shared with Bedroom.
+      this.stream = await requestSharedCameraStream();
 
       // 2. Setup video element without 'display: none' so browser engine actively decodes frames
       if (!this.video) {
@@ -438,16 +430,14 @@ export class HandTracker {
   /**
    * Stops video stream and pauses detection loop while retaining loaded models.
    */
-  public stopTracking(notify = true) {
+  public stopTracking(notify = true, releaseCamera = false) {
     if (this.animFrameId) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
 
-    if (this.stream) {
-      this.stream.getTracks().forEach((track) => track.stop());
-      this.stream = null;
-    }
+    this.stream = null;
+    if (releaseCamera) releaseSharedCameraStream();
 
     if (this.video) {
       this.video.srcObject = null;
@@ -469,7 +459,7 @@ export class HandTracker {
    */
   public toggleTracking(): Promise<boolean> {
     if (this.status === 'tracking' || this.status === 'requesting' || this.status === 'loading_model') {
-      this.stopTracking();
+      this.stopTracking(true, true);
       return Promise.resolve(false);
     } else {
       return this.startTracking();

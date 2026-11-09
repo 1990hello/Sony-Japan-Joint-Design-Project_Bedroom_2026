@@ -13,6 +13,7 @@ import { HandDebugPanel } from './components/HandDebugPanel';
 import { HandTracker, HandGestureState, HandTrackerStatus } from './services/HandTracker';
 import { ExperienceMoment, CameraPreset } from './types';
 import { soundEngine } from './audio/SoundEngine';
+import { getSharedCameraStream } from '../shared/sharedCamera';
 
 export default function App() {
   const canvasMountRef = useRef<HTMLDivElement>(null);
@@ -144,6 +145,12 @@ export default function App() {
     });
 
     handTrackerRef.current = tracker;
+
+    // If webcam access was already granted in Bedroom, resume tracking here
+    // using the same MediaStream without asking the user to enable it again.
+    if (getSharedCameraStream()) {
+      tracker.startTracking();
+    }
 
     return () => {
       tracker.dispose();
