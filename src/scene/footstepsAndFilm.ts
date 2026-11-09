@@ -77,8 +77,9 @@ export class FootstepsAndFilm {
       new THREE.Vector3(1.12, 0.025, -0.85),
       new THREE.Vector3(1.35, 0.025, -1.55),
       new THREE.Vector3(1.9, 0.025, -2.15),
-      new THREE.Vector3(2.55, 0.025, -2.72),
-      new THREE.Vector3(3.4, 0.025, -3.3),
+      new THREE.Vector3(2.55, 0.025, -3.35),
+      // Finish at the relocated doorway (x = 3.48, z = -4.1).
+      new THREE.Vector3(3.4, 0.025, -4.1),
     ]);
 
     const stepPoints = curve.getPoints(16);
@@ -214,7 +215,8 @@ export class FootstepsAndFilm {
       depthWrite: false,
     });
     this.doorwayGlowMesh = new THREE.Mesh(glowGeo, glowMat);
-    this.doorwayGlowMesh.position.set(3.48, 1.15, -3.3);
+    // Keep the warm doorway glow centred on the relocated doorway.
+    this.doorwayGlowMesh.position.set(3.48, 1.15, -4.1);
     this.doorwayGlowMesh.rotation.y = -Math.PI / 2;
     this.group.add(this.doorwayGlowMesh);
   }
