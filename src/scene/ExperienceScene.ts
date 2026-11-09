@@ -211,7 +211,6 @@ export class ExperienceScene {
 
   private onPointerDown = () => {
     this.isPointerDown = true;
-    soundscape.startAmbient();
 
     // Raycast check
     this.raycaster.setFromCamera(this.pointerNorm, this.camera);
@@ -350,7 +349,6 @@ export class ExperienceScene {
 
   public triggerStartWave() {
     if (this.currentSubstate !== 'idle_waiting_wave') return;
-    soundscape.startAmbient();
     this.setSubstate('orb_materializing');
     this.callbacks.onInstructionChange('The central orb awakens...');
 
