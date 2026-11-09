@@ -58,10 +58,12 @@ const ALPHA_POS = 0.38;
 const ALPHA_DIST = 0.42;
 
 // Wasm fallback candidates to guarantee reliable loading across networks
+// Keep the WASM runtime exactly aligned with the installed npm package
+// (@mediapipe/tasks-vision 1.2.2). Do not fall back to a different SDK build:
+// FilesetResolver only prepares the fileset; the actual WASM is instantiated
+// later by createFromOptions, so mixed-version fallbacks are unsafe.
 const WASM_CDN_URLS = [
   'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.2/wasm',
-  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm',
-  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm',
 ];
 
 const MODEL_ASSET_URL =
@@ -195,33 +197,22 @@ export class HandTracker {
         }
 
         startupStage = 'hand landmark model loading';
-        try {
-          // Attempt GPU delegate first for 60fps hardware acceleration
-          this.landmarker = await HandLandmarker.createFromOptions(visionInstance, {
-            baseOptions: {
-              modelAssetPath: MODEL_ASSET_URL,
-              delegate: 'GPU',
-            },
-            runningMode: 'VIDEO',
-            numHands: 2,
-            minHandDetectionConfidence: 0.5,
-            minHandPresenceConfidence: 0.5,
-            minTrackingConfidence: 0.5,
-          });
-        } catch (gpuErr) {
-          console.warn('MediaPipe GPU delegate unavailable, falling back to CPU delegate:', gpuErr);
-          this.landmarker = await HandLandmarker.createFromOptions(visionInstance, {
-            baseOptions: {
-              modelAssetPath: MODEL_ASSET_URL,
-              delegate: 'CPU',
-            },
-            runningMode: 'VIDEO',
-            numHands: 2,
-            minHandDetectionConfidence: 0.45,
-            minHandPresenceConfidence: 0.45,
-            minTrackingConfidence: 0.45,
-          });
-        }
+
+        // Use CPU directly for predictable browser startup. A failed GPU
+        // initialisation can leave the Emscripten runtime partially created;
+        // retrying CPU against that same runtime can produce noExitRuntime
+        // errors instead of recovering cleanly.
+        this.landmarker = await HandLandmarker.createFromOptions(visionInstance, {
+          baseOptions: {
+            modelAssetPath: MODEL_ASSET_URL,
+            delegate: 'CPU',
+          },
+          runningMode: 'VIDEO',
+          numHands: 2,
+          minHandDetectionConfidence: 0.45,
+          minHandPresenceConfidence: 0.45,
+          minTrackingConfidence: 0.45,
+        });
       }
 
       this.setStatus('tracking', 'Hand tracking active');
