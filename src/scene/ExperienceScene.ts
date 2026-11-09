@@ -368,14 +368,14 @@ export class ExperienceScene {
       this.screenManager.startAbsorption(
         undefined,
         () => {
-          // 3. All screens absorbed -> display accomplishments inside orb
-          this.showAccomplishmentsInsideOrb();
+          // 3. All screens absorbed -> display the floating recognition tab beside the orb
+          this.showAccomplishmentsTab();
         }
       );
     }, 1800);
   }
 
-  private showAccomplishmentsInsideOrb() {
+  private showAccomplishmentsTab() {
     this.setSubstate('showing_accomplishments');
     this.callbacks.onInstructionChange('Recognizing what you accomplished today.');
 
@@ -402,7 +402,7 @@ export class ExperienceScene {
     this.callbacks.onStageChange('stage2_encouragement', 'black_threads_emerging');
     this.callbacks.onInstructionChange('Acknowledging the mental weight and lingering worries...');
 
-    // Fade out accomplishments from inside orb
+    // Fade out the floating recognition tab
     let fade = 1.0;
     const fadeOut = setInterval(() => {
       fade -= 0.08;

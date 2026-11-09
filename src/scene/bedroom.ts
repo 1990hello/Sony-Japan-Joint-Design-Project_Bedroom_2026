@@ -83,27 +83,27 @@ export class BedroomEnvironment {
 
     // Back Wall (z = -5.5) with cutout for window
     const backWallGroup = new THREE.Group();
-    // Left piece
-    const bw1 = new THREE.Mesh(new THREE.BoxGeometry(0.8, 3.2, 0.1), wallMat);
-    bw1.position.set(-3.1, 1.6, -5.5);
+    // Left section of the back wall; the window now occupies the right side.
+    const bw1 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 3.2, 0.1), wallMat);
+    bw1.position.set(-1.7, 1.6, -5.5);
     bw1.receiveShadow = true;
     backWallGroup.add(bw1);
 
     // Below window
     const bw2 = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.75, 0.1), wallMat);
-    bw2.position.set(-1.4, 0.375, -5.5);
+    bw2.position.set(1.4, 0.375, -5.5);
     bw2.receiveShadow = true;
     backWallGroup.add(bw2);
 
     // Above window
     const bw3 = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.65, 0.1), wallMat);
-    bw3.position.set(-1.4, 2.875, -5.5);
+    bw3.position.set(1.4, 2.875, -5.5);
     bw3.receiveShadow = true;
     backWallGroup.add(bw3);
 
-    // Right piece of back wall
-    const bw4 = new THREE.Mesh(new THREE.BoxGeometry(4.0, 3.2, 0.1), wallMat);
-    bw4.position.set(1.6, 1.6, -5.5);
+    // Right section of the back wall beside the window.
+    const bw4 = new THREE.Mesh(new THREE.BoxGeometry(0.8, 3.2, 0.1), wallMat);
+    bw4.position.set(3.1, 1.6, -5.5);
     bw4.receiveShadow = true;
     backWallGroup.add(bw4);
 
@@ -145,7 +145,7 @@ export class BedroomEnvironment {
   }
 
   private buildWindowAndSkyline() {
-    // Window opening: x from -2.7 to -0.1 (width 2.6m), y from 0.75 to 2.55 (height 1.8m)
+    // Window opening: x from 0.1 to 2.7 (width 2.6m), y from 0.75 to 2.55 (height 1.8m)
     const windowFrameMat = new THREE.MeshStandardMaterial({
       color: 0x181512,
       roughness: 0.35,
@@ -153,7 +153,7 @@ export class BedroomEnvironment {
     });
 
     const windowGroup = new THREE.Group();
-    windowGroup.position.set(-1.4, 1.65, -5.5);
+    windowGroup.position.set(1.4, 1.65, -5.5);
 
     // Outer & mullion frame
     const sill = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.08, 0.28), createWoodTexture(true).image ? new THREE.MeshStandardMaterial({ map: createWoodTexture(true), roughness: 0.4 }) : windowFrameMat);
@@ -202,7 +202,7 @@ export class BedroomEnvironment {
       fog: false,
     });
     const skyMesh = new THREE.Mesh(skyGeo, skyMat);
-    skyMesh.position.set(-1.4, 2.0, -5.6);
+    skyMesh.position.set(1.4, 2.0, -5.6);
     this.group.add(skyMesh);
   }
 
@@ -342,8 +342,8 @@ export class BedroomEnvironment {
 
   private buildBedAndNightstand() {
     const bedGroup = new THREE.Group();
-    // Positioned along the back right: x = 1.8, z = -4.0
-    bedGroup.position.set(1.7, 0, -3.8);
+    // Positioned along the back left, keeping the right-side route to the doorway clear.
+    bedGroup.position.set(-1.7, 0, -3.8);
 
     const oakMat = new THREE.MeshStandardMaterial({
       map: createWoodTexture(false),
@@ -482,7 +482,7 @@ export class BedroomEnvironment {
   private buildDecorAndPlant() {
     // Indoor Potted Plant (Monstera / Fiddle Leaf) in the corner near window
     const plantGroup = new THREE.Group();
-    plantGroup.position.set(-2.8, 0, -4.6);
+    plantGroup.position.set(2.9, 0, -4.6);
 
     // Ceramic textured pot
     const potMat = new THREE.MeshStandardMaterial({
@@ -636,7 +636,7 @@ export class BedroomEnvironment {
 
     // 2. Window directional light (soft evening light through window)
     this.windowLight = new THREE.DirectionalLight(0xd98656, 0.8);
-    this.windowLight.position.set(-2.5, 2.5, -5.5);
+    this.windowLight.position.set(2.5, 2.5, -5.5);
     this.windowLight.target.position.set(0, 0.8, -1.0);
     this.windowLight.castShadow = true;
     this.windowLight.shadow.mapSize.width = 1024;
