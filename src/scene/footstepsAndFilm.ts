@@ -18,6 +18,11 @@ export class FootstepsAndFilm {
   public edibleFilmHitArea!: THREE.Mesh;
   private filmCanvas!: HTMLCanvasElement;
   private filmTexture!: THREE.CanvasTexture;
+  private isFilmPrinting: boolean = false;
+  private filmPrintElapsed: number = 0;
+  private readonly filmPrintDuration: number = 1.8;
+  private filmPrintStart = new THREE.Vector3();
+  private onFilmPrintComplete?: () => void;
 
   // The circular film rests just in front of the firewood dock printer slot
   public readonly filmInitialPos = new THREE.Vector3(0, 0.74 + 0.002, -0.23 + 0.155);
@@ -120,18 +125,18 @@ export class FootstepsAndFilm {
     this.filmCanvas.height = 512;
     const ctx = this.filmCanvas.getContext('2d')!;
 
-    // Golden translucent circular disc
+    // Cool aqua-blue translucent edible disc, clearly distinct from the warm golden footsteps.
     const grad = ctx.createRadialGradient(256, 256, 10, 256, 256, 250);
-    grad.addColorStop(0, 'rgba(255, 235, 185, 0.95)');
-    grad.addColorStop(0.7, 'rgba(240, 195, 120, 0.88)');
-    grad.addColorStop(1, 'rgba(220, 160, 80, 0.92)');
+    grad.addColorStop(0, 'rgba(225, 250, 255, 0.98)');
+    grad.addColorStop(0.68, 'rgba(145, 215, 232, 0.94)');
+    grad.addColorStop(1, 'rgba(75, 160, 190, 0.96)');
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.arc(256, 256, 248, 0, Math.PI * 2);
     ctx.fill();
 
     // Fine concentric micro-nutrient rings
-    ctx.strokeStyle = 'rgba(180, 130, 60, 0.4)';
+    ctx.strokeStyle = 'rgba(35, 115, 145, 0.48)';
     ctx.lineWidth = 1.5;
     for (let r = 50; r < 240; r += 32) {
       ctx.beginPath();
@@ -140,7 +145,7 @@ export class FootstepsAndFilm {
     }
 
     // Outer golden edge ring
-    ctx.strokeStyle = '#c68e3c';
+    ctx.strokeStyle = '#287f9d';
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.arc(256, 256, 244, 0, Math.PI * 2);
@@ -148,7 +153,7 @@ export class FootstepsAndFilm {
 
     // Inscribed Words of Wisdom
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#4a3319';
+    ctx.fillStyle = '#123b50';
     ctx.font = 'bold 22px "Space Grotesk", sans-serif';
     ctx.fillText('EXORA // 2046', 256, 165);
 
@@ -157,7 +162,7 @@ export class FootstepsAndFilm {
     ctx.fillText('a brighter tomorrow."', 256, 285);
 
     ctx.font = '500 16px "Space Grotesk", sans-serif';
-    ctx.fillStyle = '#7a5a32';
+    ctx.fillStyle = '#24647a';
     ctx.fillText('EDIBLE BOTANICAL EXTRACT', 256, 360);
 
     this.filmTexture = new THREE.CanvasTexture(this.filmCanvas);
@@ -166,7 +171,7 @@ export class FootstepsAndFilm {
     // Disc material (translucent edible biopolymer)
     const filmMat = new THREE.MeshPhysicalMaterial({
       map: this.filmTexture,
-      color: 0xfff0d0,
+      color: 0xc8f3ff,
       transmission: 0.65,
       opacity: 0.92,
       transparent: true,
@@ -254,11 +259,18 @@ export class FootstepsAndFilm {
     this.onAllStepsLit = onAllStepsLit;
   }
 
-  public printEdibleFilm() {
-    this.isFilmPrinted = true;
+  public printEdibleFilm(onComplete?: () => void) {
+    this.isFilmPrinted = false;
+    this.isFilmPrinting = true;
+    this.filmPrintElapsed = 0;
+    this.onFilmPrintComplete = onComplete;
     this.edibleFilmGroup.visible = true;
-    // Film emerges smoothly from the front dock slot
-    this.edibleFilmGroup.position.set(0, 0.74 + 0.024, -0.23 + 0.09);
+
+    // Begin just inside the printer slot, then extrude the circular film onto the desk.
+    this.filmPrintStart.set(0, 0.74 + 0.024, -0.23 + 0.09);
+    this.edibleFilmGroup.position.copy(this.filmPrintStart);
+    this.edibleFilmGroup.scale.set(0.72, 0.72, 0.72);
+    (this.edibleFilmMesh.material as THREE.MeshPhysicalMaterial).opacity = 0.15;
   }
 
   public triggerDissolveInWater() {
@@ -298,9 +310,26 @@ export class FootstepsAndFilm {
       }
     }
 
-    // 2. Film extrusion onto desk
-    if (this.isFilmPrinted && !this.isFilmGrabbed && !this.isFilmConsumed && !this.isFilmDissolved) {
-      this.edibleFilmGroup.position.lerp(this.filmInitialPos, Math.min(1.0, delta * 3.5));
+    // 2. Animate the circular film physically extruding from the printer slot.
+    if (this.isFilmPrinting) {
+      this.filmPrintElapsed += delta;
+      const raw = Math.min(1, this.filmPrintElapsed / this.filmPrintDuration);
+      const eased = 1 - Math.pow(1 - raw, 3);
+      this.edibleFilmGroup.position.lerpVectors(this.filmPrintStart, this.filmInitialPos, eased);
+      const scale = THREE.MathUtils.lerp(0.72, 1, eased);
+      this.edibleFilmGroup.scale.setScalar(scale);
+      (this.edibleFilmMesh.material as THREE.MeshPhysicalMaterial).opacity = THREE.MathUtils.lerp(0.15, 0.92, eased);
+
+      if (raw >= 1) {
+        this.isFilmPrinting = false;
+        this.isFilmPrinted = true;
+        this.edibleFilmGroup.position.copy(this.filmInitialPos);
+        this.edibleFilmGroup.scale.setScalar(1);
+        (this.edibleFilmMesh.material as THREE.MeshPhysicalMaterial).opacity = 0.92;
+        const onComplete = this.onFilmPrintComplete;
+        this.onFilmPrintComplete = undefined;
+        onComplete?.();
+      }
     }
 
     // 3. Water effervescence bubbles
@@ -354,6 +383,9 @@ export class FootstepsAndFilm {
     (this.doorwayGlowMesh.material as THREE.MeshBasicMaterial).opacity = 0;
 
     this.isFilmPrinted = false;
+    this.isFilmPrinting = false;
+    this.filmPrintElapsed = 0;
+    this.onFilmPrintComplete = undefined;
     this.isFilmGrabbed = false;
     this.isFilmConsumed = false;
     this.isFilmDissolved = false;
