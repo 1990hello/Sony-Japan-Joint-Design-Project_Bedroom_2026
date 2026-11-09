@@ -631,25 +631,29 @@ export class ExperienceScene {
    * Stage 3: Print Circular Edible Film + Words of Wisdom INSIDE the Orb + Camera Zoom
    */
   private printFilmAndDisplayWisdomInsideOrb() {
-    this.setSubstate('film_printed');
+    this.setSubstate('film_printing');
+    this.callbacks.onInstructionChange('Observe: Your edible film is being printed');
     soundscape.playPrinterSound();
-    this.footstepsAndFilm.printEdibleFilm();
 
-    const quote = 'A calmer mind creates a brighter tomorrow.';
-    this.callbacks.onInstructionChange('Observe: Words of wisdom unfolding');
-    this.callbacks.onNarrationSubtitle(quote);
+    // Let the user see the complete circular film emerge from the printer first.
+    this.footstepsAndFilm.printEdibleFilm(() => {
+      this.setSubstate('film_printed');
 
-    // Words of wisdom appear INSIDE the orb volume
-    this.dockAndOrb.renderWisdomInsideOrb(1.0);
+      const quote = 'A calmer mind creates a brighter tomorrow.';
+      this.callbacks.onInstructionChange('Observe: Words of wisdom unfolding inside the orb');
+      this.callbacks.onNarrationSubtitle(quote);
 
-    // Speak quote aloud
-    soundscape.speak(quote, () => {
-      this.callbacks.onNarrationSubtitle(null);
-    });
+      // Reveal the matching words inside the orb only after the film has fully printed.
+      this.dockAndOrb.renderWisdomInsideOrb(1.0);
 
-    // Smooth camera zoom towards orb to absorb wisdom, hold, and return
-    this.zoomToOrb(3.8, () => {
-      this.callbacks.onInstructionChange('Action: Choose your ritual — eat the film or dissolve it in water');
+      // Narrate the quote, then begin the camera close-up after the printout is visible.
+      soundscape.speak(quote, () => {
+        this.callbacks.onNarrationSubtitle(null);
+      });
+
+      this.zoomToOrb(3.8, () => {
+        this.callbacks.onInstructionChange('Action: Choose your ritual — eat the film or dissolve it in water');
+      });
     });
   }
 
