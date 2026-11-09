@@ -31,6 +31,7 @@ interface CameraAnimationState {
   elapsed: number;
   holdDuration: number;
   holdTimer: number;
+  stayAtTarget?: boolean;
   onComplete?: () => void;
 }
 
@@ -488,6 +489,30 @@ export class ExperienceScene {
     };
   }
 
+  /**
+   * Stage 3: Reframe from the orb to the complete tabletop ritual setup.
+   * This is a close tabletop view of the water glass, edible film and campfire dock.
+   * The camera remains here so the user can comfortably choose and perform the ritual.
+   */
+  private zoomToRitualSetup(onComplete?: () => void) {
+    const targetLook = new THREE.Vector3(-0.20, 0.79, -0.16);
+    const targetPosition = new THREE.Vector3(-0.05, 1.28, 0.46);
+
+    this.cameraAnimation = {
+      mode: 'in',
+      startPos: this.camera.position.clone(),
+      targetPos: targetPosition,
+      startLook: this.cameraLookTarget.clone(),
+      targetLook,
+      duration: 1.8,
+      elapsed: 0,
+      holdDuration: 0,
+      holdTimer: 0,
+      stayAtTarget: true,
+      onComplete,
+    };
+  }
+
   // ================= STAGE 1: ACKNOWLEDGEMENT =================
 
   public triggerStartWave() {
@@ -671,13 +696,15 @@ export class ExperienceScene {
       // Reveal the matching words inside the orb only after the film has fully printed.
       this.dockAndOrb.renderWisdomInsideOrb(1.0);
 
-      // Narrate the quote, then begin the camera close-up after the printout is visible.
+      // Hold the orb close-up while the wisdom is being read.
+      // Once narration finishes, move directly to the tabletop ritual objects
+      // instead of returning to the distant seated view.
+      this.zoomToOrb(60);
       soundscape.speak(quote, () => {
         this.callbacks.onNarrationSubtitle(null);
-      });
-
-      this.zoomToOrb(3.8, () => {
-        this.callbacks.onInstructionChange('Action: Choose your ritual — eat the film or dissolve it in water');
+        this.zoomToRitualSetup(() => {
+          this.callbacks.onInstructionChange('Action: Choose your ritual — eat the film or dissolve it in water');
+        });
       });
     });
   }
@@ -746,12 +773,19 @@ export class ExperienceScene {
           anim.holdTimer += delta;
           this.camera.lookAt(this.cameraLookTarget);
           if (anim.holdTimer >= anim.holdDuration) {
-            anim.mode = 'out';
-            anim.elapsed = 0;
-            anim.startPos = this.camera.position.clone();
-            anim.targetPos = this.defaultCameraPos.clone();
-            anim.startLook = this.cameraLookTarget.clone();
-            anim.targetLook = this.defaultCameraTarget.clone();
+            if (anim.stayAtTarget) {
+              // Keep the final ritual composition in place until the user acts.
+              const onComp = anim.onComplete;
+              this.cameraAnimation = null;
+              if (onComp) onComp();
+            } else {
+              anim.mode = 'out';
+              anim.elapsed = 0;
+              anim.startPos = this.camera.position.clone();
+              anim.targetPos = this.defaultCameraPos.clone();
+              anim.startLook = this.cameraLookTarget.clone();
+              anim.targetLook = this.defaultCameraTarget.clone();
+            }
           }
         } else if (anim.mode === 'out') {
           const t = Math.min(1.0, anim.elapsed / anim.duration);
