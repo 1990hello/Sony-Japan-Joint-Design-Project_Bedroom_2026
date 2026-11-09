@@ -333,7 +333,7 @@ export class ExperienceScene {
       if (orbIntersects.length > 0) {
         this.dockAndOrb.isGrabbed = true;
         this.dockAndOrb.setDocked(false);
-        this.callbacks.onInstructionChange('Move the orb freely, or swipe towards dock to place it.');
+        this.callbacks.onInstructionChange('Pinch and move the orb. Release it near the docking station to dock it.');
         return;
       }
     }
@@ -402,26 +402,24 @@ export class ExperienceScene {
     // 2. Pinching to Grab Orb in Stage 3
     if (this.currentStage === 'stage3_closure' && this.currentSubstate === 'orb_free_interaction') {
       if (state.isPinching && !this.previousPinch) {
-        // Pinch initiated
+        // Pinch only picks up the orb; docking is evaluated when the pinch is released.
         this.dockAndOrb.isGrabbed = true;
         this.dockAndOrb.setDocked(false);
       } else if (!state.isPinching && this.previousPinch) {
-        // Pinch released
+        // Release docks the orb only when it is physically close to the docking cradle.
         if (this.dockAndOrb.isGrabbed) {
           this.dockAndOrb.isGrabbed = false;
           const distToDock = this.dockAndOrb.orbGroup.position.distanceTo(this.dockAndOrb.dockPosition);
           if (distToDock < 0.24) {
             this.dockTheOrb();
+          } else {
+            // Keep the orb hovering where the user released it.
+            this.dockAndOrb.currentOrbTarget.copy(this.dockAndOrb.orbGroup.position);
           }
         }
       }
 
-      // Open-palm flick or swipe towards dock
-      if (state.isSwiping && state.swipeDirection === 'right') {
-        this.dockTheOrb();
-      }
-
-      // If grabbed, follow hand position
+      // While pinching, the orb follows the tracked hand.
       if (this.dockAndOrb.isGrabbed) {
         const targetX = ndcX * 0.45;
         const targetY = 0.74 + 0.25 + ndcY * 0.25;
