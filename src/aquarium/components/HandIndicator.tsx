@@ -60,32 +60,24 @@ export const HandIndicator: React.FC<HandIndicatorProps> = ({
       >
         {/* Subtle pinch-release confirmation shockwave ripple */}
         {isPinching && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-amber-300/80 animate-ping opacity-60" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-amber-300/90 animate-ping opacity-60" />
         )}
 
-        {/* Dynamic Holographic Reticle Ring */}
+        {/* Shared high-contrast reticle: amber ring, white centre, dark outline */}
         <div
-          className={`flex items-center justify-center rounded-full transition-all duration-100 ${
-            isPinching
-              ? 'border-2 border-emerald-400 bg-emerald-400/20 [box-shadow:0_0_16px_rgba(52,211,153,0.8)]'
-              : isOverOrb
-              ? 'border border-yellow-200 bg-amber-300/15 [box-shadow:0_0_12px_rgba(253,224,71,0.85)]'
-              : 'border border-amber-300/90 bg-slate-950/20 [box-shadow:0_0_8px_rgba(251,191,36,0.55)]'
+          className={`flex items-center justify-center rounded-full transition-all duration-100 border-2 border-slate-950 bg-amber-300/20 ${
+            isOverOrb
+              ? '[box-shadow:0_0_0_1px_rgba(255,200,87,1),0_0_14px_rgba(255,200,87,0.95),0_0_26px_rgba(255,200,87,0.5)]'
+              : '[box-shadow:0_0_0_1px_rgba(255,200,87,0.95),0_0_10px_rgba(255,200,87,0.78),0_0_22px_rgba(255,200,87,0.35)]'
           }`}
           style={{
             width: `${ringSize}px`,
             height: `${ringSize}px`,
           }}
         >
-          {/* Central Precision Micro-dot */}
           <div
-            className={`w-1.5 h-1.5 rounded-full transition-colors duration-150 ${
-              isPinching
-                ? 'bg-emerald-300 [box-shadow:0_0_6px_rgba(110,231,183,1)]'
-                : isOverOrb
-                ? 'bg-yellow-100 [box-shadow:0_0_5px_rgba(254,249,195,1)]'
-                : 'bg-amber-300 [box-shadow:0_0_6px_rgba(252,211,77,0.95)]'
-            }`}
+            className="w-1.5 h-1.5 rounded-full bg-white border border-slate-950"
+            style={{ boxShadow: '0 0 6px rgba(255,255,255,0.95)' }}
           />
         </div>
 
@@ -93,11 +85,7 @@ export const HandIndicator: React.FC<HandIndicatorProps> = ({
         {isOverOrb && (
           <div className="absolute top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
             <div
-              className={`px-2 py-0.5 rounded text-[9px] font-mono tracking-widest uppercase transition-all duration-200 ${
-                isPinching
-                  ? 'bg-emerald-950/80 text-emerald-200 border border-emerald-400/40'
-                  : 'bg-slate-950/70 text-amber-100 border border-amber-300/40'
-              }`}
+              className="px-2 py-0.5 rounded text-[9px] font-mono tracking-widest uppercase transition-all duration-200 bg-slate-950/85 text-amber-100 border border-amber-300/50"
             >
               {isPinching ? 'RELEASE TO EXPAND' : 'PINCH TO SELECT'}
             </div>
@@ -117,11 +105,11 @@ export const HandIndicator: React.FC<HandIndicatorProps> = ({
               filter: 'drop-shadow(0 0 10px rgba(251,191,36,0.4))',
             }}
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-amber-200/25 bg-slate-950/90 text-[11px] font-mono-display text-amber-100">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-950 bg-slate-950/95 text-[11px] font-mono-display text-amber-100">
               {(remaining).toFixed(1)}s
             </div>
           </div>
-          <span className="whitespace-nowrap rounded-full border border-amber-300/30 bg-slate-950/85 px-2.5 py-1 text-[9px] font-mono-display tracking-wider text-amber-100 shadow-lg">
+          <span className="whitespace-nowrap rounded-full border border-amber-300/50 bg-slate-950/90 px-2.5 py-1 text-[9px] font-mono-display tracking-wider text-amber-100 shadow-lg">
             KEEP HOLDING · RETURN TO ORB
           </span>
         </div>
