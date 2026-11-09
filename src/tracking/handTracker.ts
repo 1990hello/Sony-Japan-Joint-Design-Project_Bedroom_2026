@@ -111,6 +111,10 @@ export class HandTracker {
   }
 
   private async initMediaPipe() {
+    // Keep the loaded model when the user switches experiences. The camera
+    // stream is shared, and only the frame loop needs to restart on return.
+    if (this.handsInstance) return;
+
     try {
       // Dynamically load MediaPipe hands script if not globally present
       if (!(window as unknown as { Hands: unknown }).Hands) {
