@@ -105,7 +105,8 @@ export class FootstepsAndFilm {
         blending: THREE.AdditiveBlending,
       });
 
-      const geo = new THREE.PlaneGeometry(0.18, 0.32);
+      // Slightly smaller footprints (5% reduction) while preserving their original proportions.
+      const geo = new THREE.PlaneGeometry(0.171, 0.304);
       const mesh = new THREE.Mesh(geo, mat);
       mesh.rotation.x = -Math.PI / 2;
 
