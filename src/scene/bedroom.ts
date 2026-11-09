@@ -576,7 +576,7 @@ export class BedroomEnvironment {
     // Glass of water on desk for Stage 3 dissolution ritual
     // Positioned at the far-left side of the tabletop, away from the seated participant.
     const glassGroup = new THREE.Group();
-    glassGroup.position.set(-0.62, this.deskSurfaceY, -0.2);
+    glassGroup.position.set(-0.5, this.deskSurfaceY, -0.2);
 
     // Physical Glass Material
     const glassMat = new THREE.MeshPhysicalMaterial({
