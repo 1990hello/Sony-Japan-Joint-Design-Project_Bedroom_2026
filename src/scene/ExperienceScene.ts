@@ -190,10 +190,10 @@ export class ExperienceScene {
       top: '50%',
       width: '32px',
       height: '32px',
-      border: '2px solid rgba(73, 177, 255, 0.98)',
+      border: '2px solid #20242B',
       borderRadius: '50%',
-      background: 'rgba(45, 151, 255, 0.16)',
-      boxShadow: '0 0 8px rgba(57, 166, 255, 0.9), 0 0 22px rgba(57, 166, 255, 0.45)',
+      background: 'rgba(255, 200, 87, 0.18)',
+      boxShadow: '0 0 0 1px rgba(255, 200, 87, 0.98), 0 0 12px rgba(255, 200, 87, 0.78), 0 0 24px rgba(255, 200, 87, 0.35)',
       transform: 'translate(-50%, -50%) scale(1)',
       opacity: '0',
       transition: 'left 55ms linear, top 55ms linear, opacity 100ms ease, border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease, transform 120ms ease',
@@ -205,8 +205,10 @@ export class ExperienceScene {
       width: '6px',
       height: '6px',
       borderRadius: '50%',
-      background: '#49b1ff',
-      boxShadow: '0 0 8px rgba(73, 177, 255, 0.95)',
+      background: '#FFFFFF',
+      border: '1px solid #20242B',
+      boxSizing: 'border-box',
+      boxShadow: '0 0 6px rgba(255, 255, 255, 0.95)',
     });
 
     cursor.appendChild(dot);
@@ -232,21 +234,15 @@ export class ExperienceScene {
     this.handCursorElement.style.top = `${y}%`;
     this.handCursorElement.style.opacity = '1';
 
-    const color = state.isPinching ? '#ffc36b' : '#49b1ff';
-    this.handCursorElement.style.borderColor = color;
-    this.handCursorElement.style.backgroundColor = state.isPinching
-      ? 'rgba(255, 179, 74, 0.24)'
-      : 'rgba(45, 151, 255, 0.16)';
-    this.handCursorElement.style.boxShadow = state.isPinching
-      ? '0 0 10px rgba(255, 187, 91, 0.98), 0 0 26px rgba(255, 164, 61, 0.58)'
-      : '0 0 8px rgba(57, 166, 255, 0.9), 0 0 22px rgba(57, 166, 255, 0.45)';
+    // Keep one cursor identity across Bedroom and Aquarium: amber ring,
+    // white centre and a dark outline for contrast over both bright and dark scenes.
+    this.handCursorElement.style.borderColor = '#20242B';
+    this.handCursorElement.style.backgroundColor = 'rgba(255, 200, 87, 0.18)';
+    this.handCursorElement.style.boxShadow =
+      '0 0 0 1px rgba(255, 200, 87, 0.98), 0 0 12px rgba(255, 200, 87, 0.78), 0 0 24px rgba(255, 200, 87, 0.35)';
     this.handCursorElement.style.transform = state.isPinching
       ? 'translate(-50%, -50%) scale(0.88)'
       : 'translate(-50%, -50%) scale(1)';
-    this.handCursorDot.style.backgroundColor = color;
-    this.handCursorDot.style.boxShadow = state.isPinching
-      ? '0 0 8px rgba(255, 195, 107, 0.98)'
-      : '0 0 8px rgba(73, 177, 255, 0.95)';
   }
 
   private setupEventListeners() {
