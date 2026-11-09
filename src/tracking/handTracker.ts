@@ -12,7 +12,7 @@ export class HandTracker {
   private stream: MediaStream | null = null;
   private isRunning: boolean = false;
   private handsInstance: unknown = null;
-  private cameraUtilsInstance: unknown = null;
+  private frameRequestId: number | null = null;
   private onStateChange: ((state: HandGestureState) => void) | null = null;
 
   // Gesture analysis history
@@ -74,6 +74,8 @@ export class HandTracker {
       await this.initMediaPipe();
 
       this.isRunning = true;
+      if (this.handsInstance) this.startDetectionLoop();
+      else this.setupFallbackTrackingLoop();
       return true;
     } catch (err) {
       console.warn('Webcam permission denied or camera unavailable:', err);
@@ -83,9 +85,10 @@ export class HandTracker {
 
   public stop(releaseCamera = false) {
     this.isRunning = false;
-    const camera = this.cameraUtilsInstance as { stop?: () => void } | null;
-    camera?.stop?.();
-    this.cameraUtilsInstance = null;
+    if (this.frameRequestId !== null) {
+      cancelAnimationFrame(this.frameRequestId);
+      this.frameRequestId = null;
+    }
     this.stream = null;
     if (releaseCamera) releaseSharedCameraStream();
     if (this.videoElement) {
@@ -112,16 +115,10 @@ export class HandTracker {
       // Dynamically load MediaPipe hands script if not globally present
       if (!(window as unknown as { Hands: unknown }).Hands) {
         await this.loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js');
-        await this.loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js');
       }
 
       const HandsClass = (window as unknown as { Hands: new (config: { locateFile: (file: string) => string }) => unknown }).Hands;
-      const CameraClass = (window as unknown as { Camera: new (video: HTMLVideoElement, options: { onFrame: () => Promise<void>; width: number; height: number }) => { start: () => void; stop: () => void } }).Camera;
-
-      if (!HandsClass) {
-        this.setupFallbackTrackingLoop();
-        return;
-      }
+      if (!HandsClass) return;
 
       const hands = new HandsClass({
         locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
@@ -147,24 +144,11 @@ export class HandTracker {
 
       this.handsInstance = hands;
 
-      if (CameraClass && this.videoElement) {
-        const camera = new CameraClass(this.videoElement, {
-          onFrame: async () => {
-            if (this.isRunning && this.videoElement) {
-              await h.send({ image: this.videoElement });
-            }
-          },
-          width: 640,
-          height: 480,
-        });
-        camera.start();
-        this.cameraUtilsInstance = camera;
-      } else {
-        this.setupFallbackTrackingLoop();
-      }
+      // The shared webcam stream is already attached to this video element.
+      // Drive MediaPipe directly from its frames instead of CameraUtils, which
+      // would request a second independent webcam stream.
     } catch (e) {
       console.warn('Could not initialize MediaPipe Hands, falling back to simulated/mouse tracking:', e);
-      this.setupFallbackTrackingLoop();
     }
   }
 
@@ -292,13 +276,45 @@ export class HandTracker {
     }
   }
 
-  private setupFallbackTrackingLoop() {
-    // If MediaPipe model fails to load, keep a lightweight fallback loop running
-    const loop = () => {
-      if (!this.isRunning) return;
-      requestAnimationFrame(loop);
+  private startDetectionLoop() {
+    const hands = this.handsInstance as { send: (input: { image: HTMLVideoElement }) => Promise<void> } | null;
+    if (!hands || !this.videoElement) return;
+
+    let processingFrame = false;
+    const tick = async () => {
+      if (!this.isRunning || !this.videoElement || !hands) {
+        this.frameRequestId = null;
+        return;
+      }
+
+      if (!processingFrame && this.videoElement.readyState >= 2 && !this.videoElement.paused) {
+        processingFrame = true;
+        try {
+          await hands.send({ image: this.videoElement });
+        } catch (error) {
+          console.warn('MediaPipe frame processing failed:', error);
+        } finally {
+          processingFrame = false;
+        }
+      }
+
+      if (this.isRunning) {
+        this.frameRequestId = requestAnimationFrame(() => void tick());
+      }
     };
-    requestAnimationFrame(loop);
+
+    this.frameRequestId = requestAnimationFrame(() => void tick());
+  }
+
+  private setupFallbackTrackingLoop() {
+    const loop = () => {
+      if (!this.isRunning) {
+        this.frameRequestId = null;
+        return;
+      }
+      this.frameRequestId = requestAnimationFrame(loop);
+    };
+    this.frameRequestId = requestAnimationFrame(loop);
   }
 
   /**
