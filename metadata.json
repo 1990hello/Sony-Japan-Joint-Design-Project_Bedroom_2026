@@ -1,0 +1,6 @@
+{
+  "name": "EXORA — Immersive 3D Bedroom Experience (2046)",
+  "description": "A photorealistic real-time 3D emotional transition experience helping remote workers disconnect and decompress into personal time in 2046.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
