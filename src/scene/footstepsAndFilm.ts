@@ -15,7 +15,8 @@ export class FootstepsAndFilm {
   // Edible film
   public edibleFilmGroup: THREE.Group;
   public edibleFilmMesh!: THREE.Mesh;
-  public filmInitialPos = new THREE.Vector3(0.25, 0.74 + 0.024, 0.08 + 0.14);
+  // Edible film rests just beyond the printer slot at the relocated front-right dock.
+  public filmInitialPos = new THREE.Vector3(0.52, 0.74 + 0.024, 0.22 + 0.14);
   public isFilmPrinted: boolean = false;
   public isFilmGrabbed: boolean = false;
   public isFilmConsumed: boolean = false;
@@ -192,7 +193,7 @@ export class FootstepsAndFilm {
     this.isFilmPrinted = true;
     this.edibleFilmGroup.visible = true;
     // Animate film sliding smoothly out of printer slot
-    this.edibleFilmGroup.position.set(0.25, 0.74 + 0.024, 0.08 + 0.08);
+    this.edibleFilmGroup.position.set(0.52, 0.74 + 0.024, 0.22 + 0.08);
   }
 
   public triggerDissolveInWater() {
