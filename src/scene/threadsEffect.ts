@@ -188,7 +188,7 @@ export class ThreadsEffect {
     });
 
     // Positioned in air above the orb
-    const planeGeo = new THREE.PlaneGeometry(0.38, 0.16);
+    const planeGeo = new THREE.PlaneGeometry(0.50, 0.21);
     this.textCanvasMesh = new THREE.Mesh(planeGeo, textMat);
     this.textCanvasMesh.position.set(0, 0.24, 0.05);
     this.group.add(this.textCanvasMesh);
@@ -311,11 +311,11 @@ export class ThreadsEffect {
       line3 = currentText.substring(line1Total.length + 1 + line2Total.length + 1);
     }
 
-    ctx.font = '500 36px "Plus Jakarta Sans", sans-serif';
+    ctx.font = '500 40px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#ffffff';
     if (line1) ctx.fillText(line1, 512, 100);
 
-    ctx.font = 'italic 500 38px "Playfair Display", Georgia, serif';
+    ctx.font = 'italic 500 42px "Playfair Display", Georgia, serif';
     ctx.fillStyle = '#ffdfa0';
     if (line2) ctx.fillText(line2, 512, 195);
 
