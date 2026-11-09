@@ -37,7 +37,8 @@ export class SoundEngine {
   private isInitialized = false;
   private isMuted = false;
   private currentMasterVol = 0.75;
-  private currentAmbienceVol = 0.65;
+  // Continuous underwater ambience disabled: preserve interaction SFX without the background drone/noise.
+  private currentAmbienceVol = 0;
   private currentSfxVol = 0.8;
 
   constructor() {
@@ -68,7 +69,8 @@ export class SoundEngine {
       this.sfxGain.gain.setValueAtTime(this.currentSfxVol, this.ctx.currentTime);
       this.sfxGain.connect(this.masterGain);
 
-      this.setupAmbience();
+      // Do not start the continuous procedural ambience layer. The separate
+      // sfxGain path remains active for intentional interaction sounds.
       this.isInitialized = true;
     } catch (e) {
       console.warn('Web Audio initialization error:', e);
