@@ -880,7 +880,7 @@ export class ExperienceScene {
         !this.footstepsAndFilm.isFilmPrinting;
       this.bedroom.updateWaterGlassHalo(delta, ritualPromptActive);
       const doorwayHover = this.doorwayReady && this.isPointerOverDoorway();
-      this.bedroom.setDoorwayHighlighted(this.doorwayReady && doorwayHover);
+      this.bedroom.setDoorwayHighlighted(this.doorwayReady, doorwayHover);
 
       this.renderer.render(this.scene, this.camera);
 

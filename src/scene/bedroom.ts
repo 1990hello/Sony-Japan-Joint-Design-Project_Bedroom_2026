@@ -668,12 +668,11 @@ export class BedroomEnvironment {
     this.group.add(glassGroup);
   }
 
-  public setDoorwayHighlighted(active: boolean) {
-    if (this.isDoorwayHighlighted === active) return;
+  public setDoorwayHighlighted(active: boolean, hovered = false) {
     this.isDoorwayHighlighted = active;
     this.doorFrameMaterial.emissive.setHex(active ? 0xffc77a : 0x000000);
-    this.doorFrameMaterial.emissiveIntensity = active ? 0.48 : 0;
-    this.doorSpillLight.intensity = active ? 2.0 : 1.35;
+    this.doorFrameMaterial.emissiveIntensity = active ? (hovered ? 0.72 : 0.32) : 0;
+    this.doorSpillLight.intensity = active ? (hovered ? 2.1 : 1.65) : 1.35;
   }
 
   public updateWaterGlassHalo(delta: number, active: boolean) {
