@@ -160,13 +160,34 @@ export default function App() {
 
   // Handle hand tracking toggle
   const handleToggleHandTracking = useCallback(async () => {
-    if (!handTrackerRef.current) return;
-    const active = await handTrackerRef.current.toggleTracking();
+    const tracker = handTrackerRef.current;
+    if (!tracker) return;
+
+    const status = tracker.getStatus();
+    if (status === 'requesting' || status === 'loading_model') {
+      showToast(status === 'requesting'
+        ? 'Connecting to webcam...'
+        : 'Loading hand tracking model...');
+      return;
+    }
+
+    if (status === 'tracking') {
+      tracker.stopTracking(true, true);
+      setIsHandTrackingActive(false);
+      showToast('Hand tracking paused. Mouse fallback active.');
+      return;
+    }
+
+    const active = await tracker.startTracking();
     setIsHandTrackingActive(active);
+
     if (active) {
       showToast('Hand tracking enabled. Bring your hand into webcam view.');
     } else {
-      showToast('Hand tracking paused. Mouse fallback active.');
+      const failure = tracker.getStatusMessage();
+      showToast(failure
+        ? `Hand tracking couldn't start: ${failure}`
+        : 'Hand tracking could not start. Open the debug panel (D) for details.');
     }
   }, [showToast]);
 

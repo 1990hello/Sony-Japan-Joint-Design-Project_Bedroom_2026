@@ -136,12 +136,14 @@ export class HandTracker {
       return false;
     }
 
+    let startupStage = 'webcam access';
     try {
       this.setStatus('requesting', 'Requesting webcam access...');
 
       // 1. Reuse the app-wide webcam session shared with Bedroom.
       this.stream = await requestSharedCameraStream();
 
+      startupStage = 'video initialisation';
       // 2. Setup video element without 'display: none' so browser engine actively decodes frames
       if (!this.video) {
         this.video = document.createElement('video');
@@ -174,6 +176,7 @@ export class HandTracker {
         });
       }
 
+      startupStage = 'MediaPipe WebAssembly loading';
       // 3. Load MediaPipe Hand Landmarker model with CDN fallbacks
       this.setStatus('loading_model', 'Loading hand tracking model...');
       if (!this.landmarker) {
@@ -191,6 +194,7 @@ export class HandTracker {
           throw new Error('Could not initialize MediaPipe vision tasks WebAssembly resolver.');
         }
 
+        startupStage = 'hand landmark model loading';
         try {
           // Attempt GPU delegate first for 60fps hardware acceleration
           this.landmarker = await HandLandmarker.createFromOptions(visionInstance, {
@@ -225,12 +229,13 @@ export class HandTracker {
       return true;
     } catch (err: unknown) {
       const error = err as { name?: string; message?: string };
-      console.warn('Webcam / Hand tracking initialization error:', err);
+      const detail = error?.message || String(err);
+      console.error(`Aquarium hand tracking failed during ${startupStage}:`, err);
 
       if (error?.name === 'NotAllowedError' || error?.name === 'PermissionDeniedError') {
         this.setStatus('denied', 'Camera permission was denied. You can continue using the mouse.');
       } else {
-        this.setStatus('error', error?.message || 'Unable to access camera or load tracking model.');
+        this.setStatus('error', `Failed during ${startupStage}: ${detail}`);
       }
       this.stopTracking(false);
       return false;
