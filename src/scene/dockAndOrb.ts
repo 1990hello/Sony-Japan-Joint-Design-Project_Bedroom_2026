@@ -393,10 +393,23 @@ export class DockAndOrb {
   }
 
   public showAccomplishments(fade: number) {
-    this.renderAccomplishmentsText(fade);
+    // Use the same progress value for opacity, scale and position so the tab
+    // appears to emerge from the orb and retract back into it.
+    const progress = THREE.MathUtils.clamp(fade, 0, 1);
+    this.renderAccomplishmentsText(progress);
     if (this.accomplishmentsPlane) {
-      (this.accomplishmentsPlane.material as THREE.MeshBasicMaterial).opacity = fade;
-      this.accomplishmentsPlane.visible = fade > 0.01;
+      const orbCenter = this.orbGroup.position;
+      const expandedPosition = new THREE.Vector3(
+        this.dockPosition.x + 0.43,
+        this.orbHoverY,
+        this.dockPosition.z
+      );
+
+      this.accomplishmentsPlane.position.lerpVectors(orbCenter, expandedPosition, progress);
+      const scale = THREE.MathUtils.lerp(0.08, 1, THREE.MathUtils.smoothstep(progress, 0, 1));
+      this.accomplishmentsPlane.scale.setScalar(scale);
+      (this.accomplishmentsPlane.material as THREE.MeshBasicMaterial).opacity = progress;
+      this.accomplishmentsPlane.visible = progress > 0.01;
     }
   }
 }
