@@ -195,6 +195,9 @@ export class HandTracker {
     if (!landmarks || landmarks.length < 21) {
       if (this.currentState.isHandDetected) {
         this.currentState.isHandDetected = false;
+        // Do not combine movement from before and after a tracking interruption.
+        this.xHistory = [];
+        this.prevTimes = [];
         if (this.onStateChange) this.onStateChange({ ...this.currentState });
       }
       return;
@@ -219,33 +222,35 @@ export class HandTracker {
     const isMiddleExtended = landmarks[12].y < landmarks[10].y;
     const isRingExtended = landmarks[16].y < landmarks[14].y;
     const isPinkyExtended = landmarks[20].y < landmarks[18].y;
-    const isOpenPalm = isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended && !isPinching;
+    // Allow one finger to be partially occluded or mis-tracked by the camera.
+    const extendedFingerCount = [isIndexExtended, isMiddleExtended, isRingExtended, isPinkyExtended].filter(Boolean).length;
+    const isOpenPalm = extendedFingerCount >= 3 && !isPinching;
 
-    // Wave detection: require a clearly open hand and deliberate side-to-side travel.
-    // Small tracking jitter is not enough to trigger the docking command.
+    // Wave detection: accept a natural open-hand wave without requiring exaggerated movement.
+    // A 3-of-4 finger check above tolerates occasional landmark tracking errors.
     const now = performance.now();
     let isWaving = false;
     if (isOpenPalm) {
       this.xHistory.push(rawX);
       this.prevTimes.push(now);
-      while (this.prevTimes.length > 0 && now - this.prevTimes[0] > 1000) {
+      while (this.prevTimes.length > 0 && now - this.prevTimes[0] > 1200) {
         this.prevTimes.shift();
         this.xHistory.shift();
       }
 
-      if (this.xHistory.length > 12 && now - this.lastWaveTime > 1500) {
+      if (this.xHistory.length > 6 && now - this.lastWaveTime > 900) {
         const horizontalSpan = Math.max(...this.xHistory) - Math.min(...this.xHistory);
         let directionChanges = 0;
         let lastDir = 0;
         for (let i = 1; i < this.xHistory.length; i++) {
           const diff = this.xHistory[i] - this.xHistory[i - 1];
-          if (Math.abs(diff) > 0.025) {
+          if (Math.abs(diff) > 0.015) {
             const dir = Math.sign(diff);
             if (lastDir !== 0 && dir !== lastDir) directionChanges++;
             lastDir = dir;
           }
         }
-        if (horizontalSpan > 0.16 && directionChanges >= 3) {
+        if (horizontalSpan > 0.11 && directionChanges >= 2) {
           isWaving = true;
           this.lastWaveTime = now;
           this.xHistory = [];
