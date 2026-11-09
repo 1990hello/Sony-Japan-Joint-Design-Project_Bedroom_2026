@@ -395,6 +395,8 @@ export class ExperienceScene {
       if (state.isPinching && !this.previousPinch && !this.dockAndOrb.isGrabbed) {
         // Only pick up the orb when the pinch cursor is actually over it.
         this.dockAndOrb.orbGroup.updateMatrixWorld(true);
+        // Refresh the ray from the current fingertip/pinch cursor before testing the orb.
+        this.raycaster.setFromCamera(this.pointerNorm, this.camera);
         const orbHit = this.raycaster.intersectObject(this.dockAndOrb.outerGlassOrb, false);
         if (orbHit.length > 0) {
           this.dockAndOrb.isGrabbed = true;
