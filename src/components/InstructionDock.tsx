@@ -56,6 +56,7 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [autoCollapseNotice, setAutoCollapseNotice] = useState(true);
+  const [isGestureGuideOpen, setIsGestureGuideOpen] = useState(false);
 
   // Auto-collapse after 12 seconds when idle
   useEffect(() => {
@@ -146,34 +147,6 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
               </p>
             </div>
           </div>
-
-          {/* Clear, persistent gesture guide for the orb interaction */}
-          {currentStage === 'stage3_closure' && currentSubstate === 'orb_free_interaction' && (
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-stone-800 pt-3">
-              <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-950/25 px-3 py-2.5">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300">
-                  <Hand className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold tracking-wide text-amber-200">1 · PINCH & HOLD TO MOVE</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-stone-200">Point at the orb, pinch your thumb and index finger together, and keep them pinched while moving your hand. Release to let go.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 rounded-xl border border-sky-500/30 bg-sky-950/25 px-3 py-2.5">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-300">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold tracking-wide text-sky-200">2 · OPEN-PALM WAVE TO RETURN</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-stone-200">After releasing the pinch, open your hand and wave it left and right. The orb will return to the glowing dock.</p>
-                </div>
-              </div>
-              <div className="sm:col-span-2 flex items-center gap-2 rounded-lg bg-stone-800/70 px-3 py-2 text-xs text-stone-300">
-                <MousePointer2 className="h-4 w-4 shrink-0 text-stone-400" />
-                <span><strong className="text-stone-100">Using a mouse?</strong> Click and hold the orb, move it, then release. Select <strong className="text-amber-200">Return Orb to Dock</strong> when ready.</span>
-              </div>
-            </div>
-          )}
 
           {/* Center / Action Buttons contextual to active substate */}
           <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
@@ -289,6 +262,56 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
           <span className="text-[10px] text-stone-500 tracking-wide">
             You can interact with webcam gestures or mouse click & drag
           </span>
+        </div>
+      )}
+
+      {/* Floating, on-demand gesture guide — separate from the bottom controls */}
+      {currentStage === 'stage3_closure' && currentSubstate === 'orb_free_interaction' && (
+        <div className="fixed right-4 sm:right-6 top-1/2 -translate-y-1/2 z-[60] flex items-center gap-2">
+          {isGestureGuideOpen && (
+            <div className="w-[min(320px,calc(100vw-5.5rem))] rounded-2xl border border-stone-700 bg-stone-950/95 p-4 shadow-2xl backdrop-blur-md">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400">Quick guide</p>
+                  <h3 className="text-sm font-semibold text-stone-100">Move the orb</h3>
+                </div>
+                <button onClick={() => setIsGestureGuideOpen(false)} className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-800 hover:text-white" aria-label="Close gesture guide">
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div className="flex gap-3 rounded-xl border border-amber-500/25 bg-amber-950/25 p-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300"><Hand className="h-5 w-5" /></div>
+                  <div>
+                    <p className="text-xs font-bold text-amber-200">1. PINCH & HOLD</p>
+                    <p className="mt-1 text-xs leading-relaxed text-stone-200">Point at the orb. Bring your thumb and index finger together and keep them pinched as you move your hand. Release to let go.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 rounded-xl border border-sky-500/25 bg-sky-950/25 p-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-300"><Sparkles className="h-5 w-5" /></div>
+                  <div>
+                    <p className="text-xs font-bold text-sky-200">2. OPEN-PALM WAVE</p>
+                    <p className="mt-1 text-xs leading-relaxed text-stone-200">Release the pinch, open your hand, then wave left and right. The orb returns to the glowing dock.</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 rounded-lg bg-stone-800/80 p-3 text-xs leading-relaxed text-stone-300">
+                  <MousePointer2 className="mt-0.5 h-4 w-4 shrink-0 text-stone-400" />
+                  <p><strong className="text-stone-100">Mouse:</strong> Click and hold the orb, move it, then release. Press <strong className="text-amber-200">Return Orb to Dock</strong>.</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <button
+            onClick={() => setIsGestureGuideOpen(!isGestureGuideOpen)}
+            className="flex items-center gap-2 rounded-l-xl rounded-r-md border border-amber-500/40 bg-stone-950/95 px-3 py-3 text-amber-200 shadow-xl backdrop-blur-md transition-colors hover:bg-stone-800"
+            aria-expanded={isGestureGuideOpen}
+            aria-label={isGestureGuideOpen ? "Hide orb instructions" : "Show orb instructions"}
+            title="Orb interaction instructions"
+          >
+            <Hand className="h-5 w-5" />
+            <span className="hidden sm:inline text-xs font-semibold tracking-wide">ORB GUIDE</span>
+            {isGestureGuideOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
         </div>
       )}
     </div>
