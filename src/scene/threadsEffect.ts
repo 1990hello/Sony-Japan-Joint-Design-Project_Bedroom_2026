@@ -150,7 +150,7 @@ export class ThreadsEffect {
     // Billboard placed right in front/above the orb in 3D space
     const planeGeo = new THREE.PlaneGeometry(0.36, 0.14);
     this.textCanvasMesh = new THREE.Mesh(planeGeo, textMat);
-    this.textCanvasMesh.position.set(0, 0.12, 0.06);
+    this.textCanvasMesh.position.set(0, 0.25, 0.06);
     this.group.add(this.textCanvasMesh);
   }
 
@@ -288,7 +288,7 @@ export class ThreadsEffect {
 
     // Animate tracer pen tip across the text box
     const x = (this.textRevealFraction - 0.5) * 0.32;
-    const y = 0.12 + Math.sin(this.textRevealFraction * Math.PI * 4) * 0.03;
+    const y = 0.25 + Math.sin(this.textRevealFraction * Math.PI * 4) * 0.03;
     this.tracerParticle.position.set(x, y, 0.07);
   }
 
