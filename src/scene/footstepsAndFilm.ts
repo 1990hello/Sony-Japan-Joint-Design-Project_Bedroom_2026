@@ -62,12 +62,14 @@ export class FootstepsAndFilm {
       new THREE.Vector3(0.28, 0.746, -0.2),
       new THREE.Vector3(0.58, 0.746, -0.2),
       new THREE.Vector3(0.82, 0.746, -0.2),
-      new THREE.Vector3(1.02, 0.006, -0.28),
-      new THREE.Vector3(1.12, 0.006, -0.85),
-      new THREE.Vector3(1.35, 0.006, -1.55),
-      new THREE.Vector3(1.9, 0.006, -2.15),
-      new THREE.Vector3(2.55, 0.006, -2.72),
-      new THREE.Vector3(3.4, 0.006, -3.3),
+      // Keep floor-level footprints clearly above both the rug surface (y = 0.005)
+      // and the room floor so the translucent decals cannot appear buried or z-fight.
+      new THREE.Vector3(1.02, 0.025, -0.28),
+      new THREE.Vector3(1.12, 0.025, -0.85),
+      new THREE.Vector3(1.35, 0.025, -1.55),
+      new THREE.Vector3(1.9, 0.025, -2.15),
+      new THREE.Vector3(2.55, 0.025, -2.72),
+      new THREE.Vector3(3.4, 0.025, -3.3),
     ]);
 
     const stepPoints = curve.getPoints(16);
@@ -98,6 +100,9 @@ export class FootstepsAndFilm {
       mesh.rotation.z = angle + Math.PI;
 
       mesh.position.copy(footPos);
+      // Draw the translucent glow after the rug while retaining depth testing
+      // against actual room geometry.
+      mesh.renderOrder = 2;
       this.footstepsGroup.add(mesh);
       this.footstepMeshes.push(mesh);
     });
