@@ -35,6 +35,8 @@ export class FootstepsAndFilm {
 
   // Water dissolution effervescence
   private bubblesSystem!: THREE.Points;
+  private dissolveParticles!: THREE.Points;
+  private dissolveParticleVelocities!: Float32Array;
   private isEffervescing: boolean = false;
   private effervescenceTime: number = 0;
 
@@ -273,6 +275,35 @@ export class FootstepsAndFilm {
 
     this.bubblesSystem = new THREE.Points(geo, mat);
     this.group.add(this.bubblesSystem);
+
+    // Bright fragments make the edible film visibly break apart in the water.
+    const fragmentCount = 42;
+    const fragmentGeometry = new THREE.BufferGeometry();
+    const fragmentPositions = new Float32Array(fragmentCount * 3);
+    this.dissolveParticleVelocities = new Float32Array(fragmentCount * 3);
+    for (let i = 0; i < fragmentCount; i++) {
+      fragmentPositions[i * 3] = -0.5;
+      fragmentPositions[i * 3 + 1] = 0.82;
+      fragmentPositions[i * 3 + 2] = -0.2;
+      const angle = (i / fragmentCount) * Math.PI * 2 + Math.random() * 0.35;
+      const speed = 0.018 + Math.random() * 0.035;
+      this.dissolveParticleVelocities[i * 3] = Math.cos(angle) * speed;
+      this.dissolveParticleVelocities[i * 3 + 1] = 0.025 + Math.random() * 0.045;
+      this.dissolveParticleVelocities[i * 3 + 2] = Math.sin(angle) * speed;
+    }
+    fragmentGeometry.setAttribute('position', new THREE.BufferAttribute(fragmentPositions, 3));
+    const fragmentMaterial = new THREE.PointsMaterial({
+      color: 0xd9a7ff,
+      size: 0.012,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+    });
+    this.dissolveParticles = new THREE.Points(fragmentGeometry, fragmentMaterial);
+    this.dissolveParticles.visible = false;
+    this.group.add(this.dissolveParticles);
   }
 
   public startFootsteps(onStepLit?: (index: number) => void, onAllStepsLit?: () => void) {
@@ -302,8 +333,14 @@ export class FootstepsAndFilm {
     this.isFilmDissolved = true;
     this.isEffervescing = true;
     this.effervescenceTime = 0;
-    // Animate film dissolving into the water glass
+    // Centre the wafer over the water, then visibly sink and break it apart.
     this.edibleFilmGroup.position.set(-0.5, 0.74 + 0.08, -0.2);
+    this.edibleFilmMesh.rotation.set(0, 0, 0);
+    const fragmentPositions = this.dissolveParticles.geometry.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < fragmentPositions.count; i++) fragmentPositions.setXYZ(i, -0.5, 0.82, -0.2);
+    fragmentPositions.needsUpdate = true;
+    (this.dissolveParticles.material as THREE.PointsMaterial).opacity = 1;
+    this.dissolveParticles.visible = true;
   }
 
   public triggerConsumeFilm() {
@@ -360,8 +397,27 @@ export class FootstepsAndFilm {
     // 3. Water effervescence bubbles
     if (this.isEffervescing) {
       this.effervescenceTime += delta;
+      const dissolveProgress = Math.min(1, this.effervescenceTime / 2.8);
       const bMat = this.bubblesSystem.material as THREE.PointsMaterial;
-      bMat.opacity = Math.max(0, Math.sin(Math.min(1.0, this.effervescenceTime / 2.5) * Math.PI) * 0.9);
+      bMat.opacity = Math.max(0, Math.sin(Math.min(1.0, this.effervescenceTime / 2.8) * Math.PI) * 1.0);
+
+      // Sink, wobble, shrink and fade the wafer over several seconds.
+      this.edibleFilmGroup.position.y = 0.82 - dissolveProgress * 0.055;
+      this.edibleFilmMesh.rotation.x = Math.sin(this.effervescenceTime * 7) * 0.12;
+      this.edibleFilmMesh.rotation.z = Math.cos(this.effervescenceTime * 5) * 0.10;
+
+      // Disperse luminous edible-film flecks upward through the water.
+      const fragmentPositions = this.dissolveParticles.geometry.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < fragmentPositions.count; i++) {
+        fragmentPositions.setXYZ(
+          i,
+          fragmentPositions.getX(i) + this.dissolveParticleVelocities[i * 3] * delta,
+          fragmentPositions.getY(i) + this.dissolveParticleVelocities[i * 3 + 1] * delta,
+          fragmentPositions.getZ(i) + this.dissolveParticleVelocities[i * 3 + 2] * delta
+        );
+      }
+      fragmentPositions.needsUpdate = true;
+      (this.dissolveParticles.material as THREE.PointsMaterial).opacity = Math.max(0, 1 - this.effervescenceTime / 2.8);
 
       const pos = this.bubblesSystem.geometry.attributes.position;
       const vel = this.bubblesSystem.geometry.attributes.velocity;
@@ -376,14 +432,15 @@ export class FootstepsAndFilm {
 
       if (this.edibleFilmMesh) {
         const fMat = this.edibleFilmMesh.material as THREE.MeshPhysicalMaterial;
-        fMat.opacity = Math.max(0, 0.92 * (1 - this.effervescenceTime / 2.0));
-        const s = Math.max(0.01, 1 - this.effervescenceTime / 2.0);
+        fMat.opacity = Math.max(0, 0.92 * Math.pow(1 - dissolveProgress, 1.5));
+        const s = Math.max(0.01, 1 - dissolveProgress * 0.78);
         this.edibleFilmMesh.scale.set(s, s, s);
       }
 
-      if (this.effervescenceTime > 2.6) {
+      if (this.effervescenceTime > 2.8) {
         this.isEffervescing = false;
         this.edibleFilmGroup.visible = false;
+        this.dissolveParticles.visible = false;
       }
     }
 
@@ -427,6 +484,9 @@ export class FootstepsAndFilm {
     this.isFilmConsumed = false;
     this.isFilmDissolved = false;
     this.isEffervescing = false;
+    this.effervescenceTime = 0;
+    this.dissolveParticles.visible = false;
+    (this.dissolveParticles.material as THREE.PointsMaterial).opacity = 0;
     this.edibleFilmGroup.visible = false;
     this.edibleFilmGroup.position.copy(this.filmInitialPos);
     this.edibleFilmMesh.scale.set(1, 1, 1);
