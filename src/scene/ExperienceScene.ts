@@ -62,12 +62,18 @@ export class ExperienceScene {
   private previousPinch: boolean = false;
   private previousWave: boolean = false;
 
+  // Visual hand pointer, positioned over the WebGL canvas.
+  private handCursorLayer: HTMLDivElement | null = null;
+  private handCursorElement: HTMLDivElement | null = null;
+  private handCursorDot: HTMLDivElement | null = null;
+
   constructor(container: HTMLElement, callbacks: SceneCallbacks) {
     this.container = container;
     this.callbacks = callbacks;
 
     this.detectSoftwareGl();
     this.initRenderer();
+    this.initHandCursor();
     this.initScene();
     this.initCamera();
     this.initModules();
@@ -150,6 +156,86 @@ export class ExperienceScene {
     // Initial instruction prompt
     this.setSubstate('idle_waiting_wave');
     this.callbacks.onInstructionChange('Wave your hand (or click "Wave Hand") to begin.');
+  }
+
+  private initHandCursor() {
+    // The overlay sits above the canvas but never intercepts mouse or touch input.
+    const layer = document.createElement('div');
+    layer.setAttribute('aria-hidden', 'true');
+    Object.assign(layer.style, {
+      position: 'absolute',
+      inset: '0',
+      zIndex: '2',
+      overflow: 'hidden',
+      pointerEvents: 'none',
+    });
+
+    const cursor = document.createElement('div');
+    Object.assign(cursor.style, {
+      position: 'absolute',
+      left: '50%',
+      top: '50%',
+      width: '32px',
+      height: '32px',
+      border: '2px solid rgba(73, 177, 255, 0.98)',
+      borderRadius: '50%',
+      background: 'rgba(45, 151, 255, 0.16)',
+      boxShadow: '0 0 8px rgba(57, 166, 255, 0.9), 0 0 22px rgba(57, 166, 255, 0.45)',
+      transform: 'translate(-50%, -50%) scale(1)',
+      opacity: '0',
+      transition: 'left 55ms linear, top 55ms linear, opacity 100ms ease, border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease, transform 120ms ease',
+      boxSizing: 'border-box',
+    });
+
+    const dot = document.createElement('div');
+    Object.assign(dot.style, {
+      width: '6px',
+      height: '6px',
+      borderRadius: '50%',
+      background: '#49b1ff',
+      boxShadow: '0 0 8px rgba(73, 177, 255, 0.95)',
+    });
+
+    cursor.appendChild(dot);
+    layer.appendChild(cursor);
+    this.container.appendChild(layer);
+
+    this.handCursorLayer = layer;
+    this.handCursorElement = cursor;
+    this.handCursorDot = dot;
+  }
+
+  private updateHandCursor(state: HandGestureState) {
+    if (!this.handCursorElement || !this.handCursorDot) return;
+
+    if (!state.isHandDetected) {
+      this.handCursorElement.style.opacity = '0';
+      return;
+    }
+
+    // Use the same mirrored, normalized coordinates that drive interaction raycasts.
+    const x = THREE.MathUtils.clamp(state.handX, 0, 1) * 100;
+    const y = THREE.MathUtils.clamp(state.handY, 0, 1) * 100;
+    this.handCursorElement.style.left = `${x}%`;
+    this.handCursorElement.style.top = `${y}%`;
+    this.handCursorElement.style.opacity = '1';
+
+    // Blue means tracking; warm amber confirms an active pinch.
+    const color = state.isPinching ? '#ffc36b' : '#49b1ff';
+    this.handCursorElement.style.borderColor = color;
+    this.handCursorElement.style.backgroundColor = state.isPinching
+      ? 'rgba(255, 179, 74, 0.24)'
+      : 'rgba(45, 151, 255, 0.16)';
+    this.handCursorElement.style.boxShadow = state.isPinching
+      ? '0 0 10px rgba(255, 187, 91, 0.98), 0 0 26px rgba(255, 164, 61, 0.58)'
+      : '0 0 8px rgba(57, 166, 255, 0.9), 0 0 22px rgba(57, 166, 255, 0.45)';
+    this.handCursorElement.style.transform = state.isPinching
+      ? 'translate(-50%, -50%) scale(0.88)'
+      : 'translate(-50%, -50%) scale(1)';
+    this.handCursorDot.style.backgroundColor = color;
+    this.handCursorDot.style.boxShadow = state.isPinching
+      ? '0 0 8px rgba(255, 195, 107, 0.98)'
+      : '0 0 8px rgba(73, 177, 255, 0.95)';
   }
 
   private setupEventListeners() {
@@ -270,6 +356,7 @@ export class ExperienceScene {
    */
   public handleHandGesture(state: HandGestureState) {
     this.currentHandState = state;
+    this.updateHandCursor(state);
 
     if (!state.isHandDetected) {
       this.previousPinch = false;
@@ -644,6 +731,12 @@ export class ExperienceScene {
     cancelAnimationFrame(this.animationFrameId);
     clearTimeout(this.animationFrameId);
     window.removeEventListener('resize', this.onResize);
+    if (this.handCursorLayer?.parentElement) {
+      this.handCursorLayer.parentElement.removeChild(this.handCursorLayer);
+    }
+    this.handCursorLayer = null;
+    this.handCursorElement = null;
+    this.handCursorDot = null;
     const el = this.renderer?.domElement;
     if (el) {
       el.removeEventListener('pointermove', this.onPointerMove);
