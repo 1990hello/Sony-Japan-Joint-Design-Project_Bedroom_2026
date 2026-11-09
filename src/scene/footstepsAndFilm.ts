@@ -16,6 +16,8 @@ export class FootstepsAndFilm {
   public edibleFilmGroup: THREE.Group;
   public edibleFilmMesh!: THREE.Mesh;
   public edibleFilmHitArea!: THREE.Mesh;
+  private filmPromptRing!: THREE.Mesh;
+  private filmPromptTime: number = 0;
   private filmCanvas!: HTMLCanvasElement;
   private filmTexture!: THREE.CanvasTexture;
   private isFilmPrinting: boolean = false;
@@ -129,18 +131,18 @@ export class FootstepsAndFilm {
     this.filmCanvas.height = 512;
     const ctx = this.filmCanvas.getContext('2d')!;
 
-    // Cool aqua-blue translucent edible disc, clearly distinct from the warm golden footsteps.
-    const grad = ctx.createRadialGradient(256, 256, 10, 256, 256, 250);
-    grad.addColorStop(0, 'rgba(225, 250, 255, 0.98)');
-    grad.addColorStop(0.68, 'rgba(145, 215, 232, 0.94)');
-    grad.addColorStop(1, 'rgba(75, 160, 190, 0.96)');
+    // Saturated luminous violet film for stronger contrast against the golden footsteps and wood.
+    const grad = ctx.createRadialGradient(256, 256, 8, 256, 256, 250);
+    grad.addColorStop(0, 'rgba(245, 230, 255, 1)');
+    grad.addColorStop(0.62, 'rgba(190, 125, 255, 0.99)');
+    grad.addColorStop(1, 'rgba(112, 55, 205, 0.98)');
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.arc(256, 256, 248, 0, Math.PI * 2);
     ctx.fill();
 
     // Fine concentric micro-nutrient rings
-    ctx.strokeStyle = 'rgba(35, 115, 145, 0.48)';
+    ctx.strokeStyle = 'rgba(75, 30, 145, 0.72)';
     ctx.lineWidth = 1.5;
     for (let r = 50; r < 240; r += 32) {
       ctx.beginPath();
@@ -148,8 +150,8 @@ export class FootstepsAndFilm {
       ctx.stroke();
     }
 
-    // Outer golden edge ring
-    ctx.strokeStyle = '#287f9d';
+    // Bright lavender-white edge for a clearly defined silhouette
+    ctx.strokeStyle = '#fff0ff';
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.arc(256, 256, 244, 0, Math.PI * 2);
@@ -157,7 +159,7 @@ export class FootstepsAndFilm {
 
     // Inscribed Words of Wisdom
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#123b50';
+    ctx.fillStyle = '#281044';
     ctx.font = 'bold 22px "Space Grotesk", sans-serif';
     ctx.fillText('EXORA // 2046', 256, 165);
 
@@ -166,7 +168,7 @@ export class FootstepsAndFilm {
     ctx.fillText('a brighter tomorrow."', 256, 285);
 
     ctx.font = '500 16px "Space Grotesk", sans-serif';
-    ctx.fillStyle = '#24647a';
+    ctx.fillStyle = '#45206f';
     ctx.fillText('EDIBLE BOTANICAL EXTRACT', 256, 360);
 
     this.filmTexture = new THREE.CanvasTexture(this.filmCanvas);
@@ -175,25 +177,27 @@ export class FootstepsAndFilm {
     // Disc material (translucent edible biopolymer)
     const filmMat = new THREE.MeshPhysicalMaterial({
       map: this.filmTexture,
-      color: 0xc8f3ff,
-      transmission: 0.65,
-      opacity: 0.92,
+      color: 0xf0d8ff,
+      emissive: 0x54208f,
+      emissiveIntensity: 0.55,
+      transmission: 0.22,
+      opacity: 0.98,
       transparent: true,
-      roughness: 0.22,
-      metalness: 0.08,
+      roughness: 0.28,
+      metalness: 0.03,
       ior: 1.48,
-      clearcoat: 0.7,
+      clearcoat: 0.9,
       depthWrite: false,
       side: THREE.DoubleSide,
     });
 
-    // Circular wafer geometry: radius 0.028m (~56mm diameter), height 0.0006m
-    const filmGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.0006, 40);
+    // Slightly larger wafer: radius 0.034m (~68mm diameter), height 0.0008m
+    const filmGeo = new THREE.CylinderGeometry(0.034, 0.034, 0.0008, 48);
     this.edibleFilmMesh = new THREE.Mesh(filmGeo, filmMat);
     this.edibleFilmGroup.add(this.edibleFilmMesh);
 
-    // Generous circular hit area (radius 0.055m = 110mm diameter)
-    const hitGeo = new THREE.CircleGeometry(0.055, 32);
+    // Generous circular hit area around the enlarged film.
+    const hitGeo = new THREE.CircleGeometry(0.068, 40);
     const hitMat = new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 0,
@@ -205,6 +209,20 @@ export class FootstepsAndFilm {
     this.edibleFilmHitArea.rotation.x = -Math.PI / 2;
     this.edibleFilmHitArea.position.y = 0.001;
     this.edibleFilmGroup.add(this.edibleFilmHitArea);
+
+    // Pulsing halo makes the printed film read as an interactive object.
+    const promptRingGeo = new THREE.TorusGeometry(0.047, 0.0022, 8, 64);
+    const promptRingMat = new THREE.MeshBasicMaterial({
+      color: 0xf0c9ff,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    this.filmPromptRing = new THREE.Mesh(promptRingGeo, promptRingMat);
+    this.filmPromptRing.rotation.x = -Math.PI / 2;
+    this.filmPromptRing.position.y = 0.003;
+    this.edibleFilmGroup.add(this.filmPromptRing);
   }
 
   private buildDoorwayGlow() {
@@ -368,7 +386,17 @@ export class FootstepsAndFilm {
       }
     }
 
-    // 4. Consume film animation
+    // 4. Interactive halo gently pulses after printing until the user picks up the film.
+    this.filmPromptTime += delta;
+    const promptActive = this.isFilmPrinted && !this.isFilmGrabbed &&
+      !this.isFilmConsumed && !this.isFilmDissolved && !this.isFilmPrinting;
+    const promptPulse = 0.5 + 0.5 * Math.sin(this.filmPromptTime * 3.2);
+    const promptMat = this.filmPromptRing.material as THREE.MeshBasicMaterial;
+    promptMat.opacity = promptActive ? 0.38 + promptPulse * 0.42 : 0;
+    const promptScale = 1 + promptPulse * 0.12;
+    this.filmPromptRing.scale.set(promptScale, promptScale, promptScale);
+
+    // 5. Consume film animation
     if (this.isFilmConsumed && this.edibleFilmGroup.visible) {
       const fMat = this.edibleFilmMesh.material as THREE.MeshPhysicalMaterial;
       fMat.opacity = Math.max(0, fMat.opacity - delta * 1.5);
@@ -391,6 +419,8 @@ export class FootstepsAndFilm {
     this.isFilmPrinted = false;
     this.isFilmPrinting = false;
     this.filmPrintElapsed = 0;
+    this.filmPromptTime = 0;
+    (this.filmPromptRing.material as THREE.MeshBasicMaterial).opacity = 0;
     this.onFilmPrintComplete = undefined;
     this.isFilmGrabbed = false;
     this.isFilmConsumed = false;
