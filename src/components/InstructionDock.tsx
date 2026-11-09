@@ -16,6 +16,7 @@ import {
   ChevronUp, 
   Sparkles,
   Hand,
+  MousePointer2,
   Droplets,
   CheckCircle2
 } from 'lucide-react';
@@ -146,6 +147,34 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
             </div>
           </div>
 
+          {/* Clear, persistent gesture guide for the orb interaction */}
+          {currentStage === 'stage3_closure' && currentSubstate === 'orb_free_interaction' && (
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-stone-800 pt-3">
+              <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-950/25 px-3 py-2.5">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300">
+                  <Hand className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold tracking-wide text-amber-200">1 · PINCH & HOLD TO MOVE</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-stone-200">Point at the orb, pinch your thumb and index finger together, and keep them pinched while moving your hand. Release to let go.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 rounded-xl border border-sky-500/30 bg-sky-950/25 px-3 py-2.5">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-300">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold tracking-wide text-sky-200">2 · OPEN-PALM WAVE TO RETURN</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-stone-200">After releasing the pinch, open your hand and wave it left and right. The orb will return to the glowing dock.</p>
+                </div>
+              </div>
+              <div className="sm:col-span-2 flex items-center gap-2 rounded-lg bg-stone-800/70 px-3 py-2 text-xs text-stone-300">
+                <MousePointer2 className="h-4 w-4 shrink-0 text-stone-400" />
+                <span><strong className="text-stone-100">Using a mouse?</strong> Click and hold the orb, move it, then release. Select <strong className="text-amber-200">Return Orb to Dock</strong> when ready.</span>
+              </div>
+            </div>
+          )}
+
           {/* Center / Action Buttons contextual to active substate */}
           <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
             {/* Stage 1: Wave to Begin trigger */}
@@ -166,7 +195,7 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
                 className="flex items-center gap-2 px-3.5 py-1.5 bg-stone-800 hover:bg-stone-700 text-amber-300 border border-amber-500/40 text-xs font-medium rounded-xl transition-all cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Place Orb on Dock</span>
+                <span>Return Orb to Dock</span>
               </button>
             )}
 
