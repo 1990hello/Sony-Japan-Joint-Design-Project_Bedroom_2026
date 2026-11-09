@@ -1,8 +1,8 @@
 /**
- * EXORA Central Orb & Firewood-Inspired Docking Station
+ * EXORA Central Orb & Campfire-Inspired Docking Station
  * 
  * Features:
- * - Natural, tactile firewood/stacked-log cradle combining warm organic timber billets with 2046 precision bronze joinery.
+ * - Miniature campfire-inspired cradle with crossed logs, charred ends, glowing coals and stylised low flames, finished with 2046 bronze details.
  * - Central concave resting cradle for the glass orb with integrated edible-film printer slot.
  * - Physically convincing glass orb with internal depth, particle cloud, and integrated holographic text displayed inside the orb volume (Accomplishments & Words of Wisdom).
  */
@@ -63,9 +63,9 @@ export class DockAndOrb {
   }
 
   /**
-   * Firewood-Inspired Docking Station:
-   * Built from a sculptural cluster of horizontal split-log billets forming a natural cradle,
-   * held by brushed bronze bands and featuring an integrated printer slot and warm ember bed.
+   * Campfire-Inspired Docking Station:
+   * Crossed firewood logs, charred ends, glowing coals and low stylised flames frame the orb cradle,
+   * while preserving the integrated edible-film printer slot at the front.
    */
   private buildFirewoodDockingStation() {
     const woodTex = createWoodTexture(true); // Smoked cedar / dark walnut
@@ -144,6 +144,59 @@ export class DockAndOrb {
     band.position.set(0, 0.038, 0);
     this.dockGroup.add(band);
 
+    // 3b. Crossed campfire logs around the outside of the orb cradle.
+    // Keep the front centre clear for the edible-film printer slot.
+    const crossedLogGeo = new THREE.CylinderGeometry(0.012, 0.014, 0.19, 12);
+    const crossedLogConfigs = [
+      { x: -0.025, z: -0.075, ry: Math.PI / 4 },
+      { x: 0.025, z: -0.075, ry: -Math.PI / 4 },
+      { x: -0.092, z: -0.005, ry: Math.PI / 2 },
+      { x: 0.092, z: -0.005, ry: Math.PI / 2 },
+    ];
+    crossedLogConfigs.forEach(cfg => {
+      const log = new THREE.Mesh(crossedLogGeo, woodMat);
+      log.position.set(cfg.x, 0.018, cfg.z);
+      log.rotation.z = Math.PI / 2;
+      log.rotation.y = cfg.ry;
+      log.castShadow = true;
+      log.receiveShadow = true;
+      this.dockGroup.add(log);
+
+      // Charred end caps give the logs a natural campfire appearance.
+      const charMat = new THREE.MeshStandardMaterial({ color: 0x241812, roughness: 0.95 });
+      const charCap = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.008, 12), charMat);
+      charCap.position.set(cfg.x + Math.cos(cfg.ry) * 0.09, 0.018, cfg.z - Math.sin(cfg.ry) * 0.09);
+      charCap.rotation.z = Math.PI / 2;
+      charCap.rotation.y = cfg.ry;
+      this.dockGroup.add(charCap);
+    });
+
+    // 3c. Low stylised flame tongues around the perimeter, framing rather than blocking the orb.
+    const outerFlameMat = new THREE.MeshBasicMaterial({
+      color: 0xff6a24, transparent: true, opacity: 0.72,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const innerFlameMat = new THREE.MeshBasicMaterial({
+      color: 0xffd36a, transparent: true, opacity: 0.88,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const flamePositions = [
+      { x: -0.092, z: -0.045, lean: -0.18 },
+      { x: 0.092, z: -0.045, lean: 0.18 },
+      { x: -0.09, z: 0.045, lean: -0.12 },
+      { x: 0.09, z: 0.045, lean: 0.12 },
+    ];
+    flamePositions.forEach(cfg => {
+      const outerFlame = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.052, 7), outerFlameMat);
+      outerFlame.position.set(cfg.x, 0.047, cfg.z);
+      outerFlame.rotation.z = cfg.lean;
+      this.dockGroup.add(outerFlame);
+      const innerFlame = new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.032, 7), innerFlameMat);
+      innerFlame.position.set(cfg.x, 0.036, cfg.z);
+      innerFlame.rotation.z = cfg.lean * 0.7;
+      this.dockGroup.add(innerFlame);
+    });
+
     // 4. Integrated Edible-Film Printer Slot: built neatly into front bronze bezel
     const printerBezel = new THREE.Mesh(
       new THREE.BoxGeometry(0.082, 0.016, 0.018),
@@ -163,17 +216,29 @@ export class DockAndOrb {
     this.printerSlotHatch.position.set(0, 0.024, 0.114);
     this.dockGroup.add(this.printerSlotHatch);
 
-    // 5. Warm ember glow between the firewood billets
+    // 5. Ember bed and scattered glowing coals beneath the orb cradle.
     const emberMat = new THREE.MeshBasicMaterial({
-      color: 0xffaa44,
+      color: 0xff7a2e,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.58,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
     });
-    const emberBed = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.004, 24), emberMat);
+    const emberBed = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.004, 32), emberMat);
     emberBed.position.set(0, 0.015, 0);
     this.dockGroup.add(emberBed);
 
-    this.dockRingLight = new THREE.PointLight(0xffbe6b, 0.8, 1.2, 2.0);
+    const coalMat = new THREE.MeshBasicMaterial({ color: 0xffb34f });
+    [
+      [-0.078, 0.022, -0.035], [0.078, 0.022, -0.035],
+      [-0.075, 0.022, 0.045], [0.075, 0.022, 0.045],
+    ].forEach(([x, y, z]) => {
+      const coal = new THREE.Mesh(new THREE.SphereGeometry(0.006, 8, 6), coalMat);
+      coal.position.set(x, y, z);
+      this.dockGroup.add(coal);
+    });
+
+    this.dockRingLight = new THREE.PointLight(0xff8a3d, 1.05, 1.2, 2.0);
     this.dockRingLight.position.set(0, 0.07, 0);
     this.dockGroup.add(this.dockRingLight);
   }
