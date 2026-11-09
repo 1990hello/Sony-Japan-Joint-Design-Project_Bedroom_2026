@@ -219,10 +219,10 @@ export class BedroomEnvironment {
       metalness: 0.02,
     });
 
-    // Extended tabletop: keep the user-facing edge in place while extending 0.30m farther away.
-    const topGeo = new THREE.BoxGeometry(1.7, 0.04, 1.15);
+    // Solid beveled tabletop: width 1.7m, depth 0.85m, thickness 0.04m
+    const topGeo = new THREE.BoxGeometry(1.7, 0.04, 0.85);
     const topMesh = new THREE.Mesh(topGeo, deskTopMat);
-    topMesh.position.set(0, this.deskSurfaceY - 0.02, -0.15);
+    topMesh.position.set(0, this.deskSurfaceY - 0.02, 0);
     topMesh.receiveShadow = true;
     topMesh.castShadow = true;
     deskGroup.add(topMesh);
