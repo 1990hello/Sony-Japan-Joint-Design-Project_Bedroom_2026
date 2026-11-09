@@ -54,7 +54,8 @@ export class ExperienceScene {
   private callbacks: SceneCallbacks;
 
   // Seated Camera
-  private readonly defaultCameraPos = new THREE.Vector3(0, 1.16, 0.62);
+  // Move the seated viewpoint 33 cm back so more of the tabletop is visible.
+  private readonly defaultCameraPos = new THREE.Vector3(0, 1.16, 0.95);
   private readonly defaultCameraTarget = new THREE.Vector3(0.08, 0.96, -1.4);
   private cameraLookTarget = new THREE.Vector3().copy(this.defaultCameraTarget);
   private seatedBreathingPhase: number = 0;
