@@ -14,6 +14,9 @@ export class BedroomEnvironment {
   public roomAmbientLight!: THREE.HemisphereLight;
   public windowLight!: THREE.DirectionalLight;
   public doorSpillLight!: THREE.PointLight;
+  public doorwayHitArea!: THREE.Mesh;
+  private doorFrameMaterial!: THREE.MeshStandardMaterial;
+  private isDoorwayHighlighted = false;
   public waterGlassMesh!: THREE.Mesh;
   public waterGlassHalo!: THREE.Mesh;
   private waterGlassHaloTime: number = 0;
@@ -433,7 +436,10 @@ export class BedroomEnvironment {
     const frameMat = new THREE.MeshStandardMaterial({
       map: createWoodTexture(true),
       roughness: 0.4,
+      emissive: 0x000000,
+      emissiveIntensity: 0,
     });
+    this.doorFrameMaterial = frameMat;
     const jambL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.3, 0.08), frameMat);
     jambL.position.set(0, 1.15, -0.6);
     doorGroup.add(jambL);
@@ -445,6 +451,20 @@ export class BedroomEnvironment {
     const header = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 1.28), frameMat);
     header.position.set(0, 2.3, 0);
     doorGroup.add(header);
+
+    // Invisible interaction surface aligned with the existing doorway opening.
+    // It is raycastable by both the tracked hand cursor and mouse fallback.
+    const doorwayHitMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    this.doorwayHitArea = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 2.05), doorwayHitMaterial);
+    this.doorwayHitArea.rotation.y = Math.PI / 2;
+    this.doorwayHitArea.position.set(0.075, 1.15, 0);
+    this.doorwayHitArea.name = 'bedroom-doorway-interaction';
+    doorGroup.add(this.doorwayHitArea);
 
     // Door slightly ajar (opening 35 degrees outward into hallway)
     const doorLeafMat = new THREE.MeshStandardMaterial({
@@ -646,6 +666,14 @@ export class BedroomEnvironment {
     glassGroup.add(this.waterGlassHalo);
 
     this.group.add(glassGroup);
+  }
+
+  public setDoorwayHighlighted(active: boolean) {
+    if (this.isDoorwayHighlighted === active) return;
+    this.isDoorwayHighlighted = active;
+    this.doorFrameMaterial.emissive.setHex(active ? 0xffc77a : 0x000000);
+    this.doorFrameMaterial.emissiveIntensity = active ? 0.48 : 0;
+    this.doorSpillLight.intensity = active ? 2.0 : 1.35;
   }
 
   public updateWaterGlassHalo(delta: number, active: boolean) {
