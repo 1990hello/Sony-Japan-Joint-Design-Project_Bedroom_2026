@@ -13,7 +13,11 @@ import { TopBar } from '../components/TopBar';
 import { NarrationOverlay } from '../components/NarrationOverlay';
 import { ExperienceStage, HandGestureState } from '../types';
 
-export default function App() {
+interface BedroomExperienceProps {
+  onEnterAquarium: () => void;
+}
+
+export default function App({ onEnterAquarium }: BedroomExperienceProps) {
   const canvasMountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ExperienceScene | null>(null);
 
@@ -41,6 +45,7 @@ export default function App() {
       onNarrationSubtitle: (text) => {
         setSubtitle(text);
       },
+      onEnterAquarium,
     });
 
     sceneRef.current = scene;

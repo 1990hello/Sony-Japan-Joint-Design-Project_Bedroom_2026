@@ -19,6 +19,7 @@ export interface SceneCallbacks {
   onStageChange: (stage: ExperienceStage, substate: string) => void;
   onInstructionChange: (text: string) => void;
   onNarrationSubtitle: (text: string | null) => void;
+  onEnterAquarium: () => void;
 }
 
 interface CameraAnimationState {
@@ -79,6 +80,8 @@ export class ExperienceScene {
   private currentHandState: HandGestureState | null = null;
   private previousPinch: boolean = false;
   private previousWave: boolean = false;
+  private doorwayReady = false;
+  private doorwayTransitionStarted = false;
 
   // Visual hand pointer
   private handCursorLayer: HTMLDivElement | null = null;
@@ -295,6 +298,38 @@ export class ExperienceScene {
     return distanceXZ < 0.18;
   }
 
+  private isPointerOverDoorway(): boolean {
+    if (!this.bedroom?.doorwayHitArea) return false;
+    this.bedroom.doorwayHitArea.updateMatrixWorld(true);
+    this.raycaster.setFromCamera(this.pointerNorm, this.camera);
+    return this.raycaster.intersectObject(this.bedroom.doorwayHitArea, false).length > 0;
+  }
+
+  private beginDoorwayTransition() {
+    if (!this.doorwayReady || this.doorwayTransitionStarted) return;
+    this.doorwayTransitionStarted = true;
+    this.doorwayReady = false;
+    this.setSubstate('entering_aquarium');
+    this.callbacks.onInstructionChange('Entering the Aquarium...');
+    this.bedroom.setDoorwayHighlighted(true);
+
+    // Move the viewpoint toward the existing doorway. The Aquarium takes over
+    // only after this short camera move has completed.
+    this.cameraAnimation = {
+      mode: 'in',
+      startPos: this.camera.position.clone(),
+      targetPos: new THREE.Vector3(3.02, 1.18, -3.35),
+      startLook: this.cameraLookTarget.clone(),
+      targetLook: new THREE.Vector3(3.48, 1.15, -4.1),
+      duration: 1.55,
+      elapsed: 0,
+      holdDuration: 0.15,
+      holdTimer: 0,
+      stayAtTarget: true,
+      onComplete: () => this.callbacks.onEnterAquarium(),
+    };
+  }
+
   private onPointerMove = (e: PointerEvent) => {
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.pointerNorm.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -330,6 +365,12 @@ export class ExperienceScene {
   private onPointerDown = () => {
     this.isPointerDown = true;
     this.raycaster.setFromCamera(this.pointerNorm, this.camera);
+
+    // Mouse/touch fallback for the same doorway interaction.
+    if (this.doorwayReady && this.isPointerOverDoorway()) {
+      this.beginDoorwayTransition();
+      return;
+    }
 
     // Stage 3 Free Orb
     if (this.currentStage === 'stage3_closure' && this.currentSubstate === 'orb_free_interaction') {
@@ -380,6 +421,11 @@ export class ExperienceScene {
     const ndcX = (state.handX - 0.5) * 2;
     const ndcY = -(state.handY - 0.5) * 2;
     this.pointerNorm.set(ndcX, ndcY);
+
+    // Pinch the existing doorway only after the closure narration has finished.
+    if (this.doorwayReady && state.isPinching && !this.previousPinch && this.isPointerOverDoorway()) {
+      this.beginDoorwayTransition();
+    }
 
     // 1. Hand Wave in Stage 1 Idle
     if (this.currentStage === 'stage1_acknowledgement' && this.currentSubstate === 'idle_waiting_wave') {
@@ -736,11 +782,19 @@ export class ExperienceScene {
     this.callbacks.onInstructionChange(`Observe: ${finalMessage}`);
     this.callbacks.onNarrationSubtitle(finalMessage);
 
+    const enableDoorwayExit = () => {
+      if (this.currentStage !== 'completed' || this.doorwayTransitionStarted || this.doorwayReady) return;
+      this.doorwayReady = true;
+      this.setSubstate('doorway_ready');
+      this.callbacks.onInstructionChange('When you are ready, pinch the doorway to enter the Aquarium.');
+      this.bedroom.setDoorwayHighlighted(true);
+    };
+
     setTimeout(() => {
-      soundscape.speak(finalMessage, () => {
-        // Calming restful state
-      });
+      soundscape.speak(finalMessage, enableDoorwayExit);
     }, 600);
+    // Accessibility fallback if speech is unavailable or its completion callback does not fire.
+    setTimeout(enableDoorwayExit, 6500);
   }
 
   private setSubstate(sub: string) {
@@ -825,6 +879,8 @@ export class ExperienceScene {
         !this.footstepsAndFilm.isFilmDissolved &&
         !this.footstepsAndFilm.isFilmPrinting;
       this.bedroom.updateWaterGlassHalo(delta, ritualPromptActive);
+      const doorwayHover = this.doorwayReady && this.isPointerOverDoorway();
+      this.bedroom.setDoorwayHighlighted(this.doorwayReady && doorwayHover);
 
       this.renderer.render(this.scene, this.camera);
 
@@ -862,6 +918,9 @@ export class ExperienceScene {
     this.currentStage = 'stage1_acknowledgement';
     this.currentSubstate = 'idle_waiting_wave';
     this.cameraAnimation = null;
+    this.doorwayReady = false;
+    this.doorwayTransitionStarted = false;
+    this.bedroom.setDoorwayHighlighted(false);
     this.camera.position.copy(this.defaultCameraPos);
     this.cameraLookTarget.copy(this.defaultCameraTarget);
     this.camera.lookAt(this.cameraLookTarget);

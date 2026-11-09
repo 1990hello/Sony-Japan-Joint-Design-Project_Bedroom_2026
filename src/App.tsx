@@ -8,6 +8,15 @@ type Experience = 'bedroom' | 'aquarium';
 
 export default function App() {
   const [activeExperience, setActiveExperience] = useState<Experience>('bedroom');
+  const [isTransitionCoverVisible, setIsTransitionCoverVisible] = useState(false);
+
+  const handleEnterAquarium = () => {
+    setIsTransitionCoverVisible(true);
+    window.setTimeout(() => {
+      setActiveExperience('aquarium');
+      window.setTimeout(() => setIsTransitionCoverVisible(false), 180);
+    }, 520);
+  };
 
   // Establish the Tasks Vision runtime before either scene can initialise
   // its own tracker. Bedroom also awaits this same promise on user activation.
@@ -20,10 +29,19 @@ export default function App() {
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-slate-950">
       <div className="absolute inset-0">
-        {activeExperience === 'bedroom' ? <BedroomExperience /> : <AquariumExperience />}
+        {activeExperience === 'bedroom'
+          ? <BedroomExperience onEnterAquarium={handleEnterAquarium} />
+          : <AquariumExperience />}
       </div>
 
-      {/* Phase 1 scene selector: scenes mount independently, with no transition yet. */}
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none fixed inset-0 z-[150] bg-black transition-opacity duration-500 ${
+          isTransitionCoverVisible ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+
+      {/* Temporary scene selector retained for testing and direct scene access. */}
       <nav
         aria-label="Experience selector"
         className="fixed right-3 top-1/2 z-[100] -translate-y-1/2 rounded-xl border border-cyan-300/20 bg-slate-950/85 p-2 text-slate-100 shadow-xl backdrop-blur-md"
