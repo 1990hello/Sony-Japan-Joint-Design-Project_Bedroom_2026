@@ -5,12 +5,11 @@
 
 import React from 'react';
 import { ExperienceMoment } from '../types';
-import { Eye, Waves, Sparkles } from 'lucide-react';
+import { Waves, Sparkles } from 'lucide-react';
 
 interface SmartGlassesHUDProps {
   moment: ExperienceMoment;
   visible: boolean;
-  onToggle: () => void;
   isHandTrackingActive?: boolean;
   isHandDetected?: boolean;
   isPinching?: boolean;
@@ -19,7 +18,6 @@ interface SmartGlassesHUDProps {
 export const SmartGlassesHUD: React.FC<SmartGlassesHUDProps> = ({
   moment,
   visible,
-  onToggle,
   isHandTrackingActive = false,
   isHandDetected = false,
   isPinching = false,
@@ -110,17 +108,6 @@ export const SmartGlassesHUD: React.FC<SmartGlassesHUDProps> = ({
         )}
       </div>
 
-      {/* Glass HUD Toggle in upper right corner */}
-      <div className="absolute top-6 right-8 pointer-events-auto">
-        <button
-          onClick={onToggle}
-          title={visible ? 'Hide EXORA Smart Glasses Overlay' : 'Show EXORA Smart Glasses Overlay'}
-          className="group flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono-display tracking-wider border rounded transition-all duration-200 bg-slate-950/80 border-cyan-500/30 hover:border-cyan-400 text-cyan-300 hover:text-white"
-        >
-          <Eye className="w-3.5 h-3.5 text-cyan-400" />
-          <span>{visible ? 'AR GLASSES: ON' : 'AR GLASSES: OFF'}</span>
-        </button>
-      </div>
     </div>
   );
 };
