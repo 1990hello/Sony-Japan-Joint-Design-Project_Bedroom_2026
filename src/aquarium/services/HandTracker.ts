@@ -92,7 +92,15 @@ export class HandTracker {
   // Two-hand ending gesture state (bringing both hands together)
   private twoHandsDwellTimer = 0;
   private twoHandsTriggered = false;
+  private lastTwoHandsSeenAt = 0;
   private lastFrameTimestamp = 0;
+
+  // More forgiving two-hand gesture thresholds. The wider release threshold
+  // prevents small tracking fluctuations from repeatedly breaking contact.
+  private readonly twoHandsEnterThreshold = 0.23;
+  private readonly twoHandsExitThreshold = 0.30;
+  private readonly twoHandsLossGraceMs = 450;
+  private readonly twoHandsDwellDuration = 0.85;
 
   constructor(callbacks: HandTrackerCallbacks = {}) {
     this.callbacks = callbacks;
@@ -396,22 +404,37 @@ export class HandTracker {
       const pdz = palm0Z - palm1Z;
       twoHandsDistance = Math.sqrt(pdx * pdx + pdy * pdy + pdz * pdz);
 
-      // Threshold: palms within ~0.17 normalized screen units
-      const TWO_HANDS_PROXIMITY_THRESHOLD = 0.17;
-      if (twoHandsDistance < TWO_HANDS_PROXIMITY_THRESHOLD) {
+      // Use hysteresis: once hands are recognised as together, allow them
+      // to drift slightly farther apart without immediately losing progress.
+      if (twoHandsDistance < this.twoHandsEnterThreshold) {
+        this.lastTwoHandsSeenAt = now;
         this.twoHandsDwellTimer += dt;
-        if (this.twoHandsDwellTimer >= 1.0 && !this.twoHandsTriggered) {
-          this.twoHandsTriggered = true;
-          this.callbacks.onTwoHandsTogether?.();
-        }
+      } else if (twoHandsDistance < this.twoHandsExitThreshold) {
+        this.lastTwoHandsSeenAt = now;
+        // Keep accumulating while the palms are still reasonably close.
+        this.twoHandsDwellTimer += dt * 0.65;
       } else {
-        this.twoHandsDwellTimer = Math.max(0, this.twoHandsDwellTimer - dt * 2.0);
+        // Briefly tolerate imperfect palm tracking / small separation.
+        const sinceTogether = now - this.lastTwoHandsSeenAt;
+        if (sinceTogether > this.twoHandsLossGraceMs) {
+          this.twoHandsDwellTimer = Math.max(0, this.twoHandsDwellTimer - dt * 0.8);
+        }
+      }
+
+      if (this.twoHandsDwellTimer >= this.twoHandsDwellDuration && !this.twoHandsTriggered) {
+        this.twoHandsTriggered = true;
+        this.callbacks.onTwoHandsTogether?.();
       }
     } else {
-      this.twoHandsDwellTimer = Math.max(0, this.twoHandsDwellTimer - dt * 2.0);
+      // MediaPipe occasionally drops one hand for a few frames. Hold progress
+      // during that short gap instead of making the user start the gesture over.
+      const sinceTogether = now - this.lastTwoHandsSeenAt;
+      if (sinceTogether > this.twoHandsLossGraceMs) {
+        this.twoHandsDwellTimer = Math.max(0, this.twoHandsDwellTimer - dt * 0.8);
+      }
     }
 
-    const twoHandsDwellProgress = Math.min(1.0, this.twoHandsDwellTimer / 1.0);
+    const twoHandsDwellProgress = Math.min(1.0, this.twoHandsDwellTimer / this.twoHandsDwellDuration);
 
     // Transform all landmarks with mirror X for debug overlay rendering
     const allMirrored = hand.map((lm) => ({
