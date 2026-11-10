@@ -222,31 +222,23 @@ export class HandTracker {
     const extendedFingerCount = [isIndexExtended, isMiddleExtended, isRingExtended, isPinkyExtended].filter(Boolean).length;
     const isOpenPalm = extendedFingerCount >= 3 && !isPinching;
 
-    // Wave detection: accept a natural open-hand wave without requiring exaggerated movement.
-    // A 3-of-4 finger check above tolerates occasional landmark tracking errors.
+    // Wave actions in Bedroom accept one clear horizontal swipe.
+    // A full back-and-forth wave is not required: the user may continue out
+    // of the camera frame after the swipe has already crossed the threshold.
+    // Keep the open-palm check to reject accidental movement and hand jitter.
     const now = performance.now();
     let isWaving = false;
     if (isOpenPalm) {
       this.xHistory.push(rawX);
       this.prevTimes.push(now);
-      while (this.prevTimes.length > 0 && now - this.prevTimes[0] > 1200) {
+      while (this.prevTimes.length > 0 && now - this.prevTimes[0] > 900) {
         this.prevTimes.shift();
         this.xHistory.shift();
       }
 
-      if (this.xHistory.length > 6 && now - this.lastWaveTime > 900) {
-        const horizontalSpan = Math.max(...this.xHistory) - Math.min(...this.xHistory);
-        let directionChanges = 0;
-        let lastDir = 0;
-        for (let i = 1; i < this.xHistory.length; i++) {
-          const diff = this.xHistory[i] - this.xHistory[i - 1];
-          if (Math.abs(diff) > 0.015) {
-            const dir = Math.sign(diff);
-            if (lastDir !== 0 && dir !== lastDir) directionChanges++;
-            lastDir = dir;
-          }
-        }
-        if (horizontalSpan > 0.11 && directionChanges >= 2) {
+      if (this.xHistory.length >= 4 && now - this.lastWaveTime > 900) {
+        const swipeDistance = rawX - this.xHistory[0];
+        if (Math.abs(swipeDistance) >= 0.11) {
           isWaving = true;
           this.lastWaveTime = now;
           this.xHistory = [];
@@ -254,7 +246,7 @@ export class HandTracker {
         }
       }
     } else {
-      // Only continuous open-palm movement can form a wave.
+      // Only continuous open-palm movement can form the one-swipe action.
       this.xHistory = [];
       this.prevTimes = [];
     }
