@@ -25,7 +25,6 @@ export default function App() {
   const [currentMoment, setCurrentMoment] = useState<ExperienceMoment>(1);
   currentMomentRef.current = currentMoment;
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('cinematic');
-  const [isHUDVisible, setIsHUDVisible] = useState(true);
   const [isDebugHUDVisible, setIsDebugHUDVisible] = useState(false);
   const [interactionToast, setInteractionToast] = useState<string | null>(null);
 
@@ -255,8 +254,6 @@ export default function App() {
       {/* 2. EXORA 3D Smart Glasses Transparent Waveguide HUD */}
       <SmartGlassesHUD
         moment={currentMoment}
-        visible={isHUDVisible}
-        onToggle={() => setIsHUDVisible(!isHUDVisible)}
         isHandTrackingActive={isHandTrackingActive}
         isHandDetected={!!handState?.isHandDetected}
         isPinching={!!handState?.isPinching}
