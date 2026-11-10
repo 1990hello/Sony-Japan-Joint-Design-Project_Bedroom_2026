@@ -9,7 +9,6 @@ import { Waves, Sparkles } from 'lucide-react';
 
 interface SmartGlassesHUDProps {
   moment: ExperienceMoment;
-  visible: boolean;
   isHandTrackingActive?: boolean;
   isHandDetected?: boolean;
   isPinching?: boolean;
@@ -17,7 +16,6 @@ interface SmartGlassesHUDProps {
 
 export const SmartGlassesHUD: React.FC<SmartGlassesHUDProps> = ({
   moment,
-  visible,
   isHandTrackingActive = false,
   isHandDetected = false,
   isPinching = false,
@@ -42,9 +40,7 @@ export const SmartGlassesHUD: React.FC<SmartGlassesHUDProps> = ({
     <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
       {/* Subtle Peripheral Optical Waveguide Framing */}
       <div
-        className={`absolute inset-0 transition-opacity duration-1000 ${
-          visible ? 'opacity-100' : 'opacity-0'
-        }`}
+        className="absolute inset-0 opacity-100"
       >
         {/* Optical edge vignette */}
         <div className="absolute inset-0 border border-cyan-500/10 pointer-events-none [box-shadow:inset_0_0_80px_rgba(6,182,212,0.06)]" />
