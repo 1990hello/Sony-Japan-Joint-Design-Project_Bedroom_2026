@@ -24,6 +24,8 @@ export default function App({ onEnterAquarium, language }: BedroomExperienceProp
   const sceneRef = useRef<ExperienceScene | null>(null);
   const languageRef = useRef(language);
   languageRef.current = language;
+  const instructionSourceRef = useRef('Action: Wave hand or click "Wave to Begin"');
+  const subtitleSourceRef = useRef<string | null>(null);
 
   const [currentStage, setCurrentStage] = useState<ExperienceStage>('stage1_acknowledgement');
   const [currentSubstate, setCurrentSubstate] = useState<string>('idle_waiting_wave');
@@ -44,9 +46,11 @@ export default function App({ onEnterAquarium, language }: BedroomExperienceProp
         setCurrentSubstate(substate);
       },
       onInstructionChange: (text) => {
+        instructionSourceRef.current = text;
         setInstructionText(translate(text, languageRef.current));
       },
       onNarrationSubtitle: (text) => {
+        subtitleSourceRef.current = text;
         setSubtitle(text ? translate(text, languageRef.current) : null);
       },
       onEnterAquarium,
@@ -75,8 +79,8 @@ export default function App({ onEnterAquarium, language }: BedroomExperienceProp
 
   useEffect(() => {
     soundscape.setLanguage(language);
-    setInstructionText((current) => translate(current, language));
-    setSubtitle((current) => current ? translate(current, language) : null);
+    setInstructionText(translate(instructionSourceRef.current, language));
+    setSubtitle(subtitleSourceRef.current ? translate(subtitleSourceRef.current, language) : null);
   }, [language]);
 
   // Toggle Webcam Hand Tracking
