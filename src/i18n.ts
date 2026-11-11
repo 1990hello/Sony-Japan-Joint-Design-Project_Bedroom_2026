@@ -34,6 +34,27 @@ const ja: Record<string, string> = {
   'Observe: Your edible film is being printed': '見てみよう：食べられるフィルムを印刷中',
   'Observe: Words of wisdom unfolding inside the orb': '見てみよう：オーブの中に心に残る言葉が浮かぶ',
   'Action: Drag over water glass to dissolve, or release to place down': 'アクション：コップの上に運んで溶かすか、手を離して置いてね',
+  'World Emergence': '世界が広がる',
+  'Orb Awakens & Expands': 'オーブが目覚めて広がる',
+  'Room Transformation': '部屋が変わる',
+  'Metropolis Beyond Window': '窓の向こうの海底都市',
+  'Interactive World': '世界と遊ぶ',
+  'Autonomous & Sound Sculptures': '生きものと音の彫刻',
+  'Passive Daydreaming': 'ゆったり空想する',
+  'Endless Drift': '果てしない漂い',
+  'State 01': '状態 01', 'State 02': '状態 02', 'State 03': '状態 03', 'State 04': '状態 04', 'State 05': '状態 05',
+  'Both hands joined: Returning underwater world into the physical orb': '両手を合わせたね。海の世界をオーブに戻しているよ',
+  'Connecting to webcam...': 'カメラに接続中…',
+  'Loading hand tracking model...': '手の認識を準備中…',
+  'Hand tracking paused. Mouse fallback active.': '手の認識を一時停止したよ。マウスで操作できるよ。',
+  'Hand tracking enabled. Bring your hand into webcam view.': '手の認識をオンにしたよ。カメラに手を見せてね。',
+  'Experience reset to Moment 1: Discovery': '体験を最初のシーンに戻したよ',
+  'Action: Wave hand or click "Wave to Begin"': 'アクション：手を振るか「スタート」を押してね',
+  'Action: Pinch to move orb. Wave to send orb back to docking station.': 'アクション：つまんでオーブを動かして、手を振ってドックに戻そう。',
+  'Observe: A glowing path forms toward the doorway': '見てみよう：ドアへ続く光の道が現れる',
+  'Observe: Your edible film is being printed': '見てみよう：食べられるフィルムを印刷中',
+  'Observe: Words of wisdom unfolding inside the orb': '見てみよう：オーブの中に心に残る言葉が浮かぶ'
+
 };
 
 export function translate(text: string, language: AppLanguage): string {
