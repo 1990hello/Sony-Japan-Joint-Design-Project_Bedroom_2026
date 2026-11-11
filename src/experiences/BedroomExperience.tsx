@@ -79,6 +79,7 @@ export default function App({ onEnterAquarium, language }: BedroomExperienceProp
 
   useEffect(() => {
     soundscape.setLanguage(language);
+    sceneRef.current?.setLanguage(language);
     setInstructionText(translate(instructionSourceRef.current, language));
     setSubtitle(subtitleSourceRef.current ? translate(subtitleSourceRef.current, language) : null);
   }, [language]);
