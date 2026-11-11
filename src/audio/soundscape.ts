@@ -280,8 +280,8 @@ class SoundscapeEngine {
 
     if (this.isMuted || !this.speechSynth) {
       // If muted or speech not supported, simulate calm reading time based on word count
-      const words = text.split(/\s+/).length;
-      const durationMs = Math.max(3000, words * 450);
+      const units = this.language === 'ja' ? spokenText.length : spokenText.split(/\s+/).length * 5;
+      const durationMs = Math.max(3000, units * 180);
       setTimeout(() => {
         if (onEnd) onEnd();
       }, durationMs);
@@ -319,8 +319,8 @@ class SoundscapeEngine {
     utterance.onerror = finish;
 
     // Safety fallback in case browser speech synth drops onend
-    const wordCount = text.split(/\s+/).length;
-    const maxSafetyMs = Math.max(4000, wordCount * 650 + 2000);
+    const units = this.language === 'ja' ? spokenText.length : spokenText.split(/\s+/).length * 5;
+    const maxSafetyMs = Math.max(5000, units * 260 + 2500);
     setTimeout(finish, maxSafetyMs);
 
     this.speechSynth.speak(utterance);
