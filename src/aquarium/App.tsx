@@ -42,9 +42,10 @@ export default function App({ language = 'en' }: { language?: AppLanguage }) {
   const [isHandHoveringEnter, setIsHandHoveringEnter] = useState(false);
 
   const showToast = useCallback((msg: string) => {
-    setInteractionToast(translate(msg, languageRef.current));
+    const localizedMessage = translate(msg, languageRef.current);
+    setInteractionToast(localizedMessage);
     setTimeout(() => {
-      setInteractionToast((prev) => (prev === msg ? null : prev));
+      setInteractionToast((prev) => (prev === localizedMessage ? null : prev));
     }, 2800);
   }, []);
 
