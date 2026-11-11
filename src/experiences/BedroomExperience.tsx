@@ -167,6 +167,7 @@ export default function App({ onEnterAquarium, language }: BedroomExperienceProp
 
       {/* Top Header / Spec & Navigation */}
       <TopBar 
+        language={language}
         currentStage={currentStage} 
         onSelectStage={handleSelectStage} 
       />
@@ -176,6 +177,7 @@ export default function App({ onEnterAquarium, language }: BedroomExperienceProp
 
       {/* Ergonomic Collapsible Bottom Control Dock */}
       <InstructionDock
+        language={language}
         currentStage={currentStage}
         currentSubstate={currentSubstate}
         instructionText={instructionText}
