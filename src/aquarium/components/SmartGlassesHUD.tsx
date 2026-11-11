@@ -85,7 +85,7 @@ export const SmartGlassesHUD: React.FC<SmartGlassesHUDProps> = ({
             </div>
           </div>
           <div className="text-[10px] text-cyan-400/60 uppercase tracking-wider">
-            {currentMode}
+            {translate(currentMode, language)}
           </div>
         </div>
 
