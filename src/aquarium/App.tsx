@@ -336,7 +336,7 @@ export default function App({ language = 'en' }: { language?: AppLanguage }) {
                   ? translate('Take in the underwater city. Pinch a fish to invite it to follow for a moment, or pinch a bubble to pop it. The musical forms will arrive gradually.', language)
                   : currentMoment === 4
                   ? translate('Pinch a fish to invite it to follow for 10 seconds. Pinch bubbles to pop them. Pinch a musical form to play it; keep pinched to move it.', language)
-                  : translate('Simply watch and drift—nothing is required. If a musical form floats past, pinch it to return to musical interaction.', language)}}
+                  : translate('Simply watch and drift—nothing is required. If a musical form floats past, pinch it to return to musical interaction.', language)}
               </p>
               <div className="mt-2 border-t border-cyan-400/15 pt-2 text-[10px] leading-relaxed text-cyan-100/75">
                 <span className="font-semibold text-cyan-200">{translate('To return to the orb:', language)}</span>
