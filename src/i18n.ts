@@ -15,8 +15,6 @@ const ja: Record<string, string> = {
   '? INTERACTION GUIDE': '? 操作ガイド',
   'You don\'t have to do anything. Just be here.': '何もしなくていいよ。ここにいるだけでいい。',
   'STRESS:': 'ストレス：', 'HR:': '心拍：',
-  'Action: Wave hand or click "Wave to Begin"': 'アクション：手を振るか「スタート」を押してね',
-  'Action: Pinch to move orb. Wave to send orb back to docking station.': 'アクション：つまんでオーブを動かして、手を振ってドックに戻そう。',
   'Action: Choose your ritual — eat the film or dissolve it in water': 'アクション：フィルムを食べるか、水に溶かしてみよう',
   'When you are ready, pinch the doorway to enter the Aquarium.': '準備ができたら、ドアをつまんでアクアリウムへ。',
   'A calmer mind creates a brighter tomorrow.': '心が落ち着くと、明日が少し明るくなる。',
@@ -54,7 +52,6 @@ const ja: Record<string, string> = {
   'Observe: A glowing path forms toward the doorway': '見てみよう：ドアへ続く光の道が現れる',
   'Observe: Your edible film is being printed': '見てみよう：食べられるフィルムを印刷中',
   'Observe: Words of wisdom unfolding inside the orb': '見てみよう：オーブの中に心に残る言葉が浮かぶ'
-
 };
 
 export function translate(text: string, language: AppLanguage): string {
