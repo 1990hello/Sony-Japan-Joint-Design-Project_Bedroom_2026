@@ -22,6 +22,8 @@ interface BedroomExperienceProps {
 export default function App({ onEnterAquarium, language }: BedroomExperienceProps) {
   const canvasMountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ExperienceScene | null>(null);
+  const languageRef = useRef(language);
+  languageRef.current = language;
 
   const [currentStage, setCurrentStage] = useState<ExperienceStage>('stage1_acknowledgement');
   const [currentSubstate, setCurrentSubstate] = useState<string>('idle_waiting_wave');
@@ -42,10 +44,10 @@ export default function App({ onEnterAquarium, language }: BedroomExperienceProp
         setCurrentSubstate(substate);
       },
       onInstructionChange: (text) => {
-        setInstructionText(translate(text, language));
+        setInstructionText(translate(text, languageRef.current));
       },
       onNarrationSubtitle: (text) => {
-        setSubtitle(text ? translate(text, language) : null);
+        setSubtitle(text ? translate(text, languageRef.current) : null);
       },
       onEnterAquarium,
     });
