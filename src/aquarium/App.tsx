@@ -14,8 +14,9 @@ import { aquariumHandTracker, HandGestureState, HandTrackerStatus } from './serv
 import { ExperienceMoment, CameraPreset } from './types';
 import { soundEngine } from './audio/SoundEngine';
 import { getSharedCameraStream } from '../shared/sharedCamera';
+import { AppLanguage, translate } from '../i18n';
 
-export default function App() {
+export default function App({ language = 'en' }: { language?: AppLanguage }) {
   const canvasMountRef = useRef<HTMLDivElement>(null);
   const enterButtonRef = useRef<HTMLButtonElement>(null);
   const currentMomentRef = useRef<ExperienceMoment>(1);
@@ -39,11 +40,11 @@ export default function App() {
   const [isHandHoveringEnter, setIsHandHoveringEnter] = useState(false);
 
   const showToast = useCallback((msg: string) => {
-    setInteractionToast(msg);
+    setInteractionToast(translate(msg, language));
     setTimeout(() => {
       setInteractionToast((prev) => (prev === msg ? null : prev));
     }, 2800);
-  }, []);
+  }, [language]);
 
   // Show concise, stage-specific interaction guidance when the underwater experience changes mode.
   useEffect(() => {
@@ -253,6 +254,7 @@ export default function App() {
 
       {/* 2. EXORA 3D Smart Glasses Transparent Waveguide HUD */}
       <SmartGlassesHUD
+        language={language}
         moment={currentMoment}
         isHandTrackingActive={isHandTrackingActive}
         isHandDetected={!!handState?.isHandDetected}
@@ -284,6 +286,7 @@ export default function App() {
 
       {/* 3. Moment 1 Cinematic Discovery Intro Overlay */}
       <IntroOverlay
+        language={language}
         visible={currentMoment === 1}
         onEnter={() => handleSelectMoment(2)}
         enterButtonRef={enterButtonRef}
@@ -351,6 +354,7 @@ export default function App() {
 
       {/* 5. Unobstructed Collapsible Bottom Dock */}
       <NavigationDock
+        language={language}
         currentMoment={currentMoment}
         onSelectMoment={handleSelectMoment}
         cameraPreset={cameraPreset}
