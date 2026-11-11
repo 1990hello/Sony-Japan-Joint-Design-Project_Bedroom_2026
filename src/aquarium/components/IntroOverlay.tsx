@@ -5,8 +5,10 @@
 
 import React from 'react';
 import { ArrowRight, Compass } from 'lucide-react';
+import { AppLanguage } from '../../i18n';
 
 interface IntroOverlayProps {
+  language?: AppLanguage;
   visible: boolean;
   onEnter: () => void;
   onStartHandTracking?: () => void;
@@ -16,6 +18,7 @@ interface IntroOverlayProps {
 }
 
 export const IntroOverlay: React.FC<IntroOverlayProps> = ({
+  language = 'en',
   visible,
   onEnter,
   onStartHandTracking,
@@ -34,7 +37,7 @@ export const IntroOverlay: React.FC<IntroOverlayProps> = ({
             EXORA
           </span>
           <span className="text-[11px] font-mono-display tracking-widest text-cyan-400/70 uppercase mt-0.5">
-            Stage 4 — Perspective
+            {language === 'ja' ? 'ステージ4 — 新しい視点' : 'Stage 4 — Perspective'}
           </span>
         </div>
       </div>
@@ -47,10 +50,10 @@ export const IntroOverlay: React.FC<IntroOverlayProps> = ({
 
         <div className="space-y-2">
           <p className="text-base sm:text-lg font-light tracking-wide text-slate-100 leading-snug italic font-serif">
-            "Somewhere beyond the familiar, another world is waiting."
+            {language === 'ja' ? 'いつもの景色の向こうに、もうひとつの世界が待っている。' : '"Somewhere beyond the familiar, another world is waiting."'}
           </p>
           <p className="text-xs text-cyan-300/80 font-normal leading-relaxed max-w-sm mx-auto">
-            Click or tap Enter EXORA to begin. With hand tracking active, move your hand cursor over the button and pinch. In World Emergence, click the glowing orb or pinch and release it to transform the room.
+            {language === 'ja' ? '「EXORAに入る」を押して始めよう。手の認識をオンにしたら、ボタンにカーソルを合わせてつまんでね。光るオーブをクリックするか、つまんで離すと部屋が変わるよ。' : 'Click or tap Enter EXORA to begin. With hand tracking active, move your hand cursor over the button and pinch. In World Emergence, click the glowing orb or pinch and release it to transform the room.'}
           </p>
         </div>
 
@@ -60,7 +63,7 @@ export const IntroOverlay: React.FC<IntroOverlayProps> = ({
             onClick={onEnter}
             className={`group relative inline-flex items-center gap-2.5 px-6 py-2.5 text-xs font-semibold tracking-wider text-slate-950 bg-gradient-to-r from-cyan-400 to-teal-300 rounded-full hover:from-cyan-300 hover:to-teal-200 transition-all duration-300 shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] cursor-pointer ${isHandHoveringEnter ? 'scale-105 ring-2 ring-cyan-100/80 shadow-[0_0_34px_rgba(103,232,249,0.75)]' : ''}`}
           >
-            <span>Enter EXORA</span>
+            <span>{language === 'ja' ? 'EXORAに入る' : 'Enter EXORA'}</span>
             <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
           </button>
 
@@ -69,7 +72,7 @@ export const IntroOverlay: React.FC<IntroOverlayProps> = ({
               onClick={onStartHandTracking}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-mono tracking-wider text-cyan-300 hover:text-cyan-100 bg-cyan-950/60 hover:bg-cyan-900/70 border border-cyan-500/35 rounded-full transition-colors cursor-pointer"
             >
-              <span>Enable Hand Tracking</span>
+              <span>{language === 'ja' ? '手の認識をオン' : 'Enable Hand Tracking'}</span>
             </button>
           )}
         </div>
@@ -77,7 +80,7 @@ export const IntroOverlay: React.FC<IntroOverlayProps> = ({
 
       {/* Bottom Footer Note */}
       <div className="text-center text-[10px] font-mono-display tracking-widest text-slate-500 uppercase pb-1">
-        Enter EXORA • Orb Click or Hand Pinch in World Emergence • Work-to-Rest Emotional Transition
+        {language === 'ja' ? 'EXORAに入る • オーブをクリック、または手でつまむ • 仕事から休息への切り替え' : 'Enter EXORA • Orb Click or Hand Pinch in World Emergence • Work-to-Rest Emotional Transition'}
       </div>
     </div>
   );
