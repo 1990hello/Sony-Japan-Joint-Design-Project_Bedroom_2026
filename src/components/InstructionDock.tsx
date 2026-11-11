@@ -207,17 +207,17 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
                     ? 'bg-emerald-950/60 border-emerald-600/50 text-emerald-300'
                     : 'bg-stone-800/80 border-stone-700 text-stone-400 hover:text-stone-200'
                 }`}
-                title={isCameraActive ? 'Disable Camera Tracking' : 'Enable Webcam Hand Tracking'}
+                title={isCameraActive ? t('Disable Camera Tracking') : t('Enable Webcam Hand Tracking')}
               >
                 {isCameraActive ? (
                   <>
                     <Camera className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="hidden sm:inline">Hand Track On</span>
+                    <span className="hidden sm:inline">{t('Hand Track On')}</span>
                   </>
                 ) : (
                   <>
                     <CameraOff className="w-3.5 h-3.5 text-stone-400" />
-                    <span className="hidden sm:inline">Hand Track Off</span>
+                    <span className="hidden sm:inline">{t('Hand Track Off')}</span>
                   </>
                 )}
               </button>
