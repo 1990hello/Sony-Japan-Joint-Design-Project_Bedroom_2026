@@ -10,6 +10,7 @@ import {
   CameraPreset,
 } from '../types';
 import { soundEngine } from '../audio/SoundEngine';
+import { AppLanguage, translate } from '../../i18n';
 import {
   Volume2,
   VolumeX,
@@ -28,6 +29,7 @@ import {
 } from 'lucide-react';
 
 interface NavigationDockProps {
+  language?: AppLanguage;
   currentMoment: ExperienceMoment;
   onSelectMoment: (moment: ExperienceMoment) => void;
   cameraPreset: CameraPreset;
@@ -42,6 +44,7 @@ interface NavigationDockProps {
 }
 
 export const NavigationDock: React.FC<NavigationDockProps> = ({
+  language = 'en',
   currentMoment,
   onSelectMoment,
   cameraPreset,
@@ -142,6 +145,7 @@ export const NavigationDock: React.FC<NavigationDockProps> = ({
   };
 
   const currentInfo = MOMENT_DETAILS[currentMoment];
+  const t = (value: string) => translate(value, language);
 
   return (
     <div
@@ -162,13 +166,13 @@ export const NavigationDock: React.FC<NavigationDockProps> = ({
         {isCollapsed ? (
           <>
             <ChevronUp className="w-3.5 h-3.5 text-cyan-400" />
-            <span>SHOW CONTROLS</span>
+            <span>{language === 'ja' ? '操作を表示' : 'SHOW CONTROLS'}</span>
             <span className="text-cyan-400/50 text-[10px] ml-1">[H]</span>
           </>
         ) : (
           <>
             <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
-            <span>HIDE CONTROLS (ZEN MODE)</span>
+            <span>{language === 'ja' ? '操作を隠す（ZENモード）' : 'HIDE CONTROLS (ZEN MODE)'}</span>
             <span className="text-cyan-400/50 text-[10px] ml-1">[H]</span>
           </>
         )}
@@ -184,10 +188,10 @@ export const NavigationDock: React.FC<NavigationDockProps> = ({
             </span>
             <div className="flex flex-col">
               <span className="text-sm font-semibold tracking-wide text-slate-100">
-                {currentInfo.title}
+                {t(currentInfo.title)}
               </span>
               <span className="text-[11px] text-cyan-300/70 font-light">
-                {currentInfo.subtitle}
+                {t(currentInfo.subtitle)}
               </span>
             </div>
           </div>
@@ -213,7 +217,7 @@ export const NavigationDock: React.FC<NavigationDockProps> = ({
               }`}
             >
               <Camera className="w-3.5 h-3.5" />
-              <span>Camera</span>
+              <span>{language === 'ja' ? 'カメラ' : 'Camera'}</span>
             </button>
             <button
               onClick={() => setActiveTab('audio')}
@@ -224,7 +228,7 @@ export const NavigationDock: React.FC<NavigationDockProps> = ({
               }`}
             >
               <Music className="w-3.5 h-3.5" />
-              <span>Soundscape</span>
+              <span>{language === 'ja' ? 'サウンド' : 'Soundscape'}</span>
             </button>
             <button
               onClick={() => setActiveTab('guide')}
@@ -235,7 +239,7 @@ export const NavigationDock: React.FC<NavigationDockProps> = ({
               }`}
             >
               <Info className="w-3.5 h-3.5" />
-              <span>Experience</span>
+              <span>{language === 'ja' ? '体験ガイド' : 'Experience'}</span>
             </button>
           </div>
 
@@ -249,7 +253,7 @@ export const NavigationDock: React.FC<NavigationDockProps> = ({
                 title="Enter deep passive daydreaming mode"
               >
                 <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Daydream</span>
+                <span>{language === 'ja' ? '空想する' : 'Daydream'}</span>
               </button>
             )}
 
@@ -317,7 +321,7 @@ export const NavigationDock: React.FC<NavigationDockProps> = ({
                 title="Return underwater world into the physical orb (Shortcut: E or join both hands together)"
               >
                 <CircleDot className="w-3.5 h-3.5 text-cyan-300 animate-pulse" />
-                <span className="hidden sm:inline">Return to Orb</span>
+                <span className="hidden sm:inline">{language === 'ja' ? 'オーブに戻る' : 'Return to Orb'}</span>
               </button>
             )}
 
@@ -374,7 +378,7 @@ export const NavigationDock: React.FC<NavigationDockProps> = ({
               })}
             </div>
             <p className="text-[11px] text-slate-400/80 italic text-center mt-1">
-              {currentInfo.description}
+              {t(currentInfo.description)}
             </p>
           </div>
         )}
