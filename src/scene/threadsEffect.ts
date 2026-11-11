@@ -266,7 +266,7 @@ export class ThreadsEffect {
   public setLanguage(language: AppLanguage) {
     this.language = language;
     this.fullMessage = language === 'ja'
-      ? 'たくさんがんばってきたね。その努力はちゃんと伝わってるよ。少し誇りに思っていいんだよ。思っている以上に、たくさんのことをやり遂げてきたから。'
+      ? 'たくさんがんばってきたね。その努力はちゃんと伝わってるよ。思っている以上に、やり遂げてきたよ。'
       : "You've put in so much effort, and it really shows. Take a moment to be proud — you've done more than you think.";
     this.renderText(this.textRevealFraction);
   }
