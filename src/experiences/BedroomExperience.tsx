@@ -12,12 +12,14 @@ import { InstructionDock } from '../components/InstructionDock';
 import { TopBar } from '../components/TopBar';
 import { NarrationOverlay } from '../components/NarrationOverlay';
 import { ExperienceStage, HandGestureState } from '../types';
+import { AppLanguage, translate } from '../i18n';
 
 interface BedroomExperienceProps {
   onEnterAquarium: () => void;
+  language: AppLanguage;
 }
 
-export default function App({ onEnterAquarium }: BedroomExperienceProps) {
+export default function App({ onEnterAquarium, language }: BedroomExperienceProps) {
   const canvasMountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ExperienceScene | null>(null);
 
@@ -40,10 +42,10 @@ export default function App({ onEnterAquarium }: BedroomExperienceProps) {
         setCurrentSubstate(substate);
       },
       onInstructionChange: (text) => {
-        setInstructionText(text);
+        setInstructionText(translate(text, language));
       },
       onNarrationSubtitle: (text) => {
-        setSubtitle(text);
+        setSubtitle(text ? translate(text, language) : null);
       },
       onEnterAquarium,
     });
@@ -67,7 +69,14 @@ export default function App({ onEnterAquarium }: BedroomExperienceProps) {
       sceneRef.current = null;
       handTracker.stop();
     };
-  }, []);
+  }, [language]);
+
+  useEffect(() => {
+    soundscape.setLanguage(language);
+    if (sceneRef.current) sceneRef.current.setLanguage(language);
+    setInstructionText((current) => translate(current, language));
+    setSubtitle((current) => current ? translate(current, language) : null);
+  }, [language]);
 
   // Toggle Webcam Hand Tracking
   const handleToggleCamera = useCallback(async () => {
