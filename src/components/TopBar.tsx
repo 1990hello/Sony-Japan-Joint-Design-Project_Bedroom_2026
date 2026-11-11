@@ -5,13 +5,15 @@
 
 import React from 'react';
 import { ExperienceStage } from '../types';
+import { AppLanguage } from '../i18n';
 
 interface TopBarProps {
+  language?: AppLanguage;
   currentStage: ExperienceStage;
   onSelectStage: (stage: ExperienceStage) => void;
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ currentStage, onSelectStage }) => {
+export const TopBar: React.FC<TopBarProps> = ({ language = 'en', currentStage, onSelectStage }) => {
   return (
     <header className="fixed top-5 left-6 right-6 z-40 flex items-center justify-between pointer-events-none select-none">
       {/* Brand & Context */}
@@ -26,7 +28,7 @@ export const TopBar: React.FC<TopBarProps> = ({ currentStage, onSelectStage }) =
             </span>
           </div>
           <span className="text-[11px] text-stone-400 font-normal">
-            Work-to-Life Emotional Transition
+            {language === 'ja' ? '仕事から自分の時間へ' : 'Work-to-Life Emotional Transition'}
           </span>
         </div>
       </div>
@@ -41,7 +43,7 @@ export const TopBar: React.FC<TopBarProps> = ({ currentStage, onSelectStage }) =
               : 'text-stone-400 hover:text-stone-200'
           }`}
         >
-          1. Acknowledgement
+          {language === 'ja' ? '1. 今日を振り返る' : '1. Acknowledgement'}
         </button>
         <button
           onClick={() => onSelectStage('stage2_encouragement')}
@@ -51,7 +53,7 @@ export const TopBar: React.FC<TopBarProps> = ({ currentStage, onSelectStage }) =
               : 'text-stone-400 hover:text-stone-200'
           }`}
         >
-          2. Encouragement
+          {language === 'ja' ? '2. 自分をねぎらう' : '2. Encouragement'}
         </button>
         <button
           onClick={() => onSelectStage('stage3_closure')}
@@ -61,7 +63,7 @@ export const TopBar: React.FC<TopBarProps> = ({ currentStage, onSelectStage }) =
               : 'text-stone-400 hover:text-stone-200'
           }`}
         >
-          3. Closure
+          {language === 'ja' ? '3. 仕事を手放す' : '3. Closure'}
         </button>
       </nav>
     </header>

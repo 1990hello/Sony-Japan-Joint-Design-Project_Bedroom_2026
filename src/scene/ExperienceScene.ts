@@ -14,6 +14,7 @@ import { ThreadsEffect } from './threadsEffect';
 import { FootstepsAndFilm } from './footstepsAndFilm';
 import { ExperienceStage, HandGestureState } from '../types';
 import { soundscape } from '../audio/soundscape';
+import type { AppLanguage } from '../i18n';
 
 export interface SceneCallbacks {
   onStageChange: (stage: ExperienceStage, substate: string) => void;
@@ -102,6 +103,10 @@ export class ExperienceScene {
     this.setupEventListeners();
 
     this.startLoop();
+  }
+
+  public setLanguage(language: AppLanguage) {
+    if (this.threadsEffect) this.threadsEffect.setLanguage(language);
   }
 
   private detectSoftwareGl() {

@@ -21,8 +21,10 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { ExperienceStage, HandGestureState } from '../types';
+import { AppLanguage, translate } from '../i18n';
 
 interface InstructionDockProps {
+  language?: AppLanguage;
   currentStage: ExperienceStage;
   currentSubstate: string;
   instructionText: string;
@@ -40,6 +42,7 @@ interface InstructionDockProps {
 }
 
 export const InstructionDock: React.FC<InstructionDockProps> = ({
+  language = 'en',
   currentStage,
   currentSubstate,
   instructionText,
@@ -66,6 +69,8 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
+  const t = (value: string) => translate(value, language);
+
   const getStageNumber = () => {
     switch (currentStage) {
       case 'stage1_acknowledgement': return 1;
@@ -78,10 +83,10 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
 
   const getStageName = () => {
     switch (currentStage) {
-      case 'stage1_acknowledgement': return 'Stage 1 — Acknowledgement';
-      case 'stage2_encouragement': return 'Stage 2 — Encouragement';
-      case 'stage3_closure': return 'Stage 3 — Closure';
-      case 'completed': return 'Ritual Complete';
+      case 'stage1_acknowledgement': return t('Stage 1 — Acknowledgement');
+      case 'stage2_encouragement': return t('Stage 2 — Encouragement');
+      case 'stage3_closure': return t('Stage 3 — Closure');
+      case 'completed': return t('Ritual Complete');
       default: return '';
     }
   };
@@ -98,12 +103,12 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
           {isCollapsed ? (
             <>
               <ChevronUp className="w-3.5 h-3.5 text-amber-400" />
-              <span>Show Interface</span>
+              <span>{t('Show Interface')}</span>
             </>
           ) : (
             <>
               <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
-              <span>Minimize Interface</span>
+              <span>{t('Minimize Interface')}</span>
             </>
           )}
         </button>
@@ -132,18 +137,18 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
             {/* Instruction Callout */}
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5 mb-0.5">
-                {instructionText.startsWith('Action:') ? (
+                {instructionText.startsWith('Action:') || instructionText.startsWith('アクション：') ? (
                   <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-semibold tracking-wider uppercase">
-                    Your Turn
+                    {t('Your Turn')}
                   </span>
                 ) : (
                   <span className="px-1.5 py-0.5 bg-stone-700/60 text-stone-300 border border-stone-600/40 rounded text-[10px] font-medium tracking-wider uppercase">
-                    Observe
+                    {t('Observe')}
                   </span>
                 )}
               </div>
               <p className="text-sm font-medium text-stone-100 truncate max-w-[280px] sm:max-w-[420px]">
-                {instructionText.replace(/^(Action:|Observe:)\s*/i, '')}
+                {instructionText.replace(/^(Action:|Observe:)\s*/i, '').replace(/^(アクション：|見てみよう：)/, '')}
               </p>
             </div>
           </div>
@@ -157,7 +162,7 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
                 className="flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-stone-950 font-semibold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 <Hand className="w-4 h-4" />
-                <span>Wave Hand to Begin</span>
+                <span>{t('Wave Hand to Begin')}</span>
               </button>
             )}
 
@@ -168,7 +173,7 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
                 className="flex items-center gap-2 px-3.5 py-1.5 bg-stone-800 hover:bg-stone-700 text-amber-300 border border-amber-500/40 text-xs font-medium rounded-xl transition-all cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Return Orb to Dock</span>
+                <span>{t('Return Orb to Dock')}</span>
               </button>
             )}
 
@@ -180,14 +185,14 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-semibold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Eat Film</span>
+                  <span>{t('Eat Film')}</span>
                 </button>
                 <button
                   onClick={onDissolveFilm}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-900/80 hover:bg-sky-800 text-sky-200 border border-sky-600/40 font-medium text-xs rounded-xl transition-all shadow-sm cursor-pointer"
                 >
                   <Droplets className="w-3.5 h-3.5" />
-                  <span>Dissolve in Water</span>
+                  <span>{t('Dissolve in Water')}</span>
                 </button>
               </div>
             )}
@@ -243,7 +248,7 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
           <div className="mt-2.5 pt-2 border-t border-stone-800/80 flex items-center justify-between text-[11px] text-stone-400">
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${handState.isHandDetected ? 'bg-emerald-400' : 'bg-stone-600'}`} />
-              <span>{handState.isHandDetected ? 'Hand Detected' : 'Show hand in front of camera'}</span>
+              <span>{t(handState.isHandDetected ? 'Hand Detected' : 'Show hand in front of camera')}</span>
             </div>
             {handState.isHandDetected && (
               <div className="flex items-center gap-3">

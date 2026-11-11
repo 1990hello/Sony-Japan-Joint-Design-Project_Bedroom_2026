@@ -5,9 +5,11 @@
 
 import React from 'react';
 import { ExperienceMoment } from '../types';
+import { AppLanguage, translate } from '../../i18n';
 import { Waves, Sparkles } from 'lucide-react';
 
 interface SmartGlassesHUDProps {
+  language?: AppLanguage;
   moment: ExperienceMoment;
   isHandTrackingActive?: boolean;
   isHandDetected?: boolean;
@@ -15,6 +17,7 @@ interface SmartGlassesHUDProps {
 }
 
 export const SmartGlassesHUD: React.FC<SmartGlassesHUDProps> = ({
+  language = 'en',
   moment,
   isHandTrackingActive = false,
   isHandDetected = false,
@@ -54,7 +57,7 @@ export const SmartGlassesHUD: React.FC<SmartGlassesHUDProps> = ({
             <span className="text-cyan-300/70">WAVEGUIDE AR v4.2</span>
           </div>
           <div className="text-[11px] text-cyan-300/60 pl-4 flex items-center gap-2">
-            <span>STAGE 4 // PERSPECTIVE TRANSLATION</span>
+            <span>{language === 'ja' ? 'ステージ4 // 新しい視点' : 'STAGE 4 // PERSPECTIVE TRANSLATION'}</span>
             {isHandTrackingActive && (
               <>
                 <span className="text-cyan-500/40">•</span>
@@ -71,18 +74,18 @@ export const SmartGlassesHUD: React.FC<SmartGlassesHUDProps> = ({
           <div className="flex items-center gap-3 bg-slate-950/60 border border-cyan-500/20 px-3 py-1.5 rounded-sm">
             <div className="flex items-center gap-1.5 text-cyan-300">
               <Waves className="w-3.5 h-3.5 text-cyan-400" />
-              <span>STRESS:</span>
+              <span>{language === 'ja' ? 'ストレス：' : 'STRESS:'}</span>
               <span className="font-semibold text-cyan-100">{currentStress}%</span>
             </div>
             <span className="text-cyan-500/30">|</span>
             <div className="flex items-center gap-1.5 text-cyan-300">
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-              <span>HR:</span>
+              <span>{language === 'ja' ? '心拍：' : 'HR:'}</span>
               <span className="font-semibold text-cyan-100">{currentHeartRate} BPM</span>
             </div>
           </div>
           <div className="text-[10px] text-cyan-400/60 uppercase tracking-wider">
-            {currentMode}
+            {translate(currentMode, language)}
           </div>
         </div>
 
@@ -98,7 +101,7 @@ export const SmartGlassesHUD: React.FC<SmartGlassesHUDProps> = ({
           <div className="absolute top-28 left-1/2 -translate-x-1/2 text-center pointer-events-none transition-all duration-1000 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-950/50 border border-cyan-400/20 backdrop-blur-none text-cyan-200/90 text-sm font-light tracking-widest rounded-full shadow-lg">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>You don't have to do anything. Just be here.</span>
+              <span>{translate("You don't have to do anything. Just be here.", language)}</span>
             </div>
           </div>
         )}

@@ -12,14 +12,20 @@ import { InstructionDock } from '../components/InstructionDock';
 import { TopBar } from '../components/TopBar';
 import { NarrationOverlay } from '../components/NarrationOverlay';
 import { ExperienceStage, HandGestureState } from '../types';
+import { AppLanguage, translate } from '../i18n';
 
 interface BedroomExperienceProps {
   onEnterAquarium: () => void;
+  language: AppLanguage;
 }
 
-export default function App({ onEnterAquarium }: BedroomExperienceProps) {
+export default function App({ onEnterAquarium, language }: BedroomExperienceProps) {
   const canvasMountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ExperienceScene | null>(null);
+  const languageRef = useRef(language);
+  languageRef.current = language;
+  const instructionSourceRef = useRef('Action: Wave hand or click "Wave to Begin"');
+  const subtitleSourceRef = useRef<string | null>(null);
 
   const [currentStage, setCurrentStage] = useState<ExperienceStage>('stage1_acknowledgement');
   const [currentSubstate, setCurrentSubstate] = useState<string>('idle_waiting_wave');
@@ -40,10 +46,12 @@ export default function App({ onEnterAquarium }: BedroomExperienceProps) {
         setCurrentSubstate(substate);
       },
       onInstructionChange: (text) => {
-        setInstructionText(text);
+        instructionSourceRef.current = text;
+        setInstructionText(translate(text, languageRef.current));
       },
       onNarrationSubtitle: (text) => {
-        setSubtitle(text);
+        subtitleSourceRef.current = text;
+        setSubtitle(text ? translate(text, languageRef.current) : null);
       },
       onEnterAquarium,
     });
@@ -68,6 +76,13 @@ export default function App({ onEnterAquarium }: BedroomExperienceProps) {
       handTracker.stop();
     };
   }, []);
+
+  useEffect(() => {
+    soundscape.setLanguage(language);
+    sceneRef.current?.setLanguage(language);
+    setInstructionText(translate(instructionSourceRef.current, language));
+    setSubtitle(subtitleSourceRef.current ? translate(subtitleSourceRef.current, language) : null);
+  }, [language]);
 
   // Toggle Webcam Hand Tracking
   const handleToggleCamera = useCallback(async () => {
@@ -156,6 +171,7 @@ export default function App({ onEnterAquarium }: BedroomExperienceProps) {
 
       {/* Top Header / Spec & Navigation */}
       <TopBar 
+        language={language}
         currentStage={currentStage} 
         onSelectStage={handleSelectStage} 
       />
@@ -165,6 +181,7 @@ export default function App({ onEnterAquarium }: BedroomExperienceProps) {
 
       {/* Ergonomic Collapsible Bottom Control Dock */}
       <InstructionDock
+        language={language}
         currentStage={currentStage}
         currentSubstate={currentSubstate}
         instructionText={instructionText}

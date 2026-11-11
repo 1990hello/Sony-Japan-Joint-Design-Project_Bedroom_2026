@@ -14,8 +14,9 @@ import { aquariumHandTracker, HandGestureState, HandTrackerStatus } from './serv
 import { ExperienceMoment, CameraPreset } from './types';
 import { soundEngine } from './audio/SoundEngine';
 import { getSharedCameraStream } from '../shared/sharedCamera';
+import { AppLanguage, translate } from '../i18n';
 
-export default function App() {
+export default function App({ language = 'en' }: { language?: AppLanguage }) {
   const canvasMountRef = useRef<HTMLDivElement>(null);
   const enterButtonRef = useRef<HTMLButtonElement>(null);
   const currentMomentRef = useRef<ExperienceMoment>(1);
@@ -23,6 +24,8 @@ export default function App() {
   const handTrackerRef = useRef<HandTracker | null>(null);
 
   const [currentMoment, setCurrentMoment] = useState<ExperienceMoment>(1);
+  const languageRef = useRef(language);
+  languageRef.current = language;
   currentMomentRef.current = currentMoment;
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('cinematic');
   const [isDebugHUDVisible, setIsDebugHUDVisible] = useState(false);
@@ -39,9 +42,10 @@ export default function App() {
   const [isHandHoveringEnter, setIsHandHoveringEnter] = useState(false);
 
   const showToast = useCallback((msg: string) => {
-    setInteractionToast(msg);
+    const localizedMessage = translate(msg, languageRef.current);
+    setInteractionToast(localizedMessage);
     setTimeout(() => {
-      setInteractionToast((prev) => (prev === msg ? null : prev));
+      setInteractionToast((prev) => (prev === localizedMessage ? null : prev));
     }, 2800);
   }, []);
 
@@ -253,6 +257,7 @@ export default function App() {
 
       {/* 2. EXORA 3D Smart Glasses Transparent Waveguide HUD */}
       <SmartGlassesHUD
+        language={language}
         moment={currentMoment}
         isHandTrackingActive={isHandTrackingActive}
         isHandDetected={!!handState?.isHandDetected}
@@ -284,6 +289,7 @@ export default function App() {
 
       {/* 3. Moment 1 Cinematic Discovery Intro Overlay */}
       <IntroOverlay
+        language={language}
         visible={currentMoment === 1}
         onEnter={() => handleSelectMoment(2)}
         enterButtonRef={enterButtonRef}
@@ -320,21 +326,21 @@ export default function App() {
               </p>
               <h2 className="mb-1 pr-6 text-sm font-semibold tracking-wide text-cyan-100">
                 {currentMoment === 3
-                  ? 'Observe & explore'
+                  ? translate('Observe & explore', language)
                   : currentMoment === 4
-                  ? 'Interact with the soundscape'
-                  : 'Daydream at your own pace'}
+                  ? translate('Interact with the soundscape', language)
+                  : translate('Daydream at your own pace', language)}
               </h2>
               <p className="text-[11px] leading-relaxed text-slate-300">
                 {currentMoment === 3
-                  ? 'Take in the underwater city. Pinch a fish to invite it to follow for a moment, or pinch a bubble to pop it. The musical forms will arrive gradually.'
+                  ? translate('Take in the underwater city. Pinch a fish to invite it to follow for a moment, or pinch a bubble to pop it. The musical forms will arrive gradually.', language)
                   : currentMoment === 4
-                  ? 'Pinch a fish to invite it to follow for 10 seconds. Pinch bubbles to pop them. Pinch a musical form to play it; keep pinched to move it.'
-                  : 'Simply watch and drift—nothing is required. If a musical form floats past, pinch it to return to musical interaction.'}
+                  ? translate('Pinch a fish to invite it to follow for 10 seconds. Pinch bubbles to pop them. Pinch a musical form to play it; keep pinched to move it.', language)
+                  : translate('Simply watch and drift—nothing is required. If a musical form floats past, pinch it to return to musical interaction.', language)}
               </p>
               <div className="mt-2 border-t border-cyan-400/15 pt-2 text-[10px] leading-relaxed text-cyan-100/75">
-                <span className="font-semibold text-cyan-200">To return to the orb:</span>
-                {' '}bring both palms together and hold. The ring between your hands shows your progress.
+                <span className="font-semibold text-cyan-200">{translate('To return to the orb:', language)}</span>
+                {' '}{translate('bring both palms together and hold. The ring between your hands shows your progress.', language)}
               </div>
             </section>
           ) : (
@@ -343,7 +349,7 @@ export default function App() {
               onClick={() => setIsInteractionGuideVisible(true)}
               className="rounded-full border border-cyan-300/25 bg-slate-950/70 px-3 py-1.5 text-[10px] font-mono-display tracking-wider text-cyan-100/80 shadow-lg backdrop-blur-sm hover:border-cyan-300/50 hover:text-cyan-50"
             >
-              ? INTERACTION GUIDE
+              ? {language === 'ja' ? '操作ガイド' : 'INTERACTION GUIDE'}
             </button>
           )}
         </div>
@@ -351,6 +357,7 @@ export default function App() {
 
       {/* 5. Unobstructed Collapsible Bottom Dock */}
       <NavigationDock
+        language={language}
         currentMoment={currentMoment}
         onSelectMoment={handleSelectMoment}
         cameraPreset={cameraPreset}
