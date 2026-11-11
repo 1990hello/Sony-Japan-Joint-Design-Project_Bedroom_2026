@@ -1,3 +1,5 @@
+import { AppLanguage, translate } from '../i18n';
+
 /**
  * EXORA Procedural Audio Engine
  * Pure Web Audio API ambient soundscape, harmonic chimes, and synthesized effects.
@@ -11,6 +13,7 @@ class SoundscapeEngine {
   private ambientOscs: OscillatorNode[] = [];
   private speechSynth: SpeechSynthesis | null = null;
   private currentUtterance: SpeechSynthesisUtterance | null = null;
+  private language: AppLanguage = 'en';
 
   constructor() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -36,6 +39,10 @@ class SoundscapeEngine {
     if (muted && this.speechSynth) {
       this.speechSynth.cancel();
     }
+  }
+
+  public setLanguage(language: AppLanguage) {
+    this.language = language;
   }
 
   public getMuted() {
@@ -266,6 +273,7 @@ class SoundscapeEngine {
    * Speak a message calmly and invoke callback strictly when finished
    */
   public speak(text: string, onEnd?: () => void) {
+    const spokenText = translate(text, this.language);
     if (this.speechSynth) {
       this.speechSynth.cancel();
     }
@@ -280,14 +288,16 @@ class SoundscapeEngine {
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(spokenText);
+    utterance.lang = this.language === 'ja' ? 'ja-JP' : 'en-US';
     this.currentUtterance = utterance;
 
     // Find the most soothing natural voice available
     const voices = this.speechSynth.getVoices();
-    const preferredVoice = voices.find(v => 
-      (v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Samantha') || v.name.includes('Google UK English Female') || v.name.includes('Serena') || v.name.includes('Karen') || v.name.includes('Daniel') || v.name.includes('Zira')))
-    ) || voices.find(v => v.lang.startsWith('en')) || voices[0];
+    const preferredVoice = this.language === 'ja'
+      ? voices.find(v => v.lang.toLowerCase().startsWith('ja') && /natural|google|kyoko|o-ren|haruka/i.test(v.name)) || voices.find(v => v.lang.toLowerCase().startsWith('ja'))
+      : voices.find(v => v.lang.startsWith('en') && /Natural|Samantha|Google UK English Female|Serena|Karen|Daniel|Zira/i.test(v.name)) || voices.find(v => v.lang.startsWith('en'));
+
 
     if (preferredVoice) {
       utterance.voice = preferredVoice;
