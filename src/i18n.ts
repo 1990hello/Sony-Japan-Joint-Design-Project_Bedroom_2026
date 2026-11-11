@@ -51,7 +51,28 @@ const ja: Record<string, string> = {
   'Action: Pinch to move orb. Wave to send orb back to docking station.': 'アクション：つまんでオーブを動かして、手を振ってドックに戻そう。',
   'Observe: A glowing path forms toward the doorway': '見てみよう：ドアへ続く光の道が現れる',
   'Observe: Your edible film is being printed': '見てみよう：食べられるフィルムを印刷中',
-  'Observe: Words of wisdom unfolding inside the orb': '見てみよう：オーブの中に心に残る言葉が浮かぶ'
+  'Observe: Words of wisdom unfolding inside the orb': '見てみよう：オーブの中に心に残る言葉が浮かぶ',
+  'The Miniature Orb': '小さなオーブ',
+  'Ordinary Living Room': 'いつものリビング',
+  'Beta Wave (Hyper-Alert)': 'ベータ波（緊張状態）',
+  'Alpha Transition (Decompressing)': 'アルファ波（リラックスへ）',
+  'Alpha Flow (Somatic Calming)': 'アルファ波（心身が落ち着く）',
+  'Theta Resonant (Playful Flow)': 'シータ波（遊びの没入）',
+  'Theta Deep (Autonomous Daydream)': 'シータ波（自由な空想）',
+  'Take in the underwater city. Pinch a fish to invite it to follow for a moment, or pinch a bubble to pop it. The musical forms will arrive gradually.': '海底都市をゆっくり眺めてみよう。魚をつまむと少しついてきてくれるよ。泡をつまむとはじけるよ。音のオブジェも少しずつ現れるよ。',
+  'Pinch a fish to invite it to follow for 10 seconds. Pinch bubbles to pop them. Pinch a musical form to play it; keep pinched to move it.': '魚をつまむと10秒ほどついてくるよ。泡をつまむとはじけるよ。音のオブジェをつまむと音が鳴って、つまんだまま動かせるよ。',
+  'Simply watch and drift—nothing is required. If a musical form floats past, pinch it to return to musical interaction.': '何もしなくて大丈夫。ゆっくり眺めてみよう。音のオブジェが流れてきたら、つまんで音と遊んでもいいよ。',
+  'Invite a fish': '魚を呼んでみよう',
+  'Pop a bubble': '泡をはじこう',
+  'Play the sound forms': '音のオブジェを鳴らそう',
+  'Return to the orb': 'オーブに戻ろう',
+  'Pinch a fish to invite it to follow your hand for about 10 seconds. It then gently returns to swimming on its own.': '魚をつまむと10秒ほど手についてくるよ。そのあとはまた自由に泳ぎ始めるよ。',
+  'Pinch a floating bubble to pop it and release a small, delicate cluster of bubbles.': '浮かぶ泡をつまむとはじけて、小さな泡がふわっと広がるよ。',
+  'Pinch a raindrop, harmonic sphere, or string instrument to make a sound. Keep pinched to move it; release to let it drift.': '雨粒やハーモニック球、弦のオブジェをつまむと音が鳴るよ。つまんだまま動かして、手を離すと漂い始めるよ。',
+  'Bring both palms together and hold until the progress ring completes. You can also use the Return to Orb control.': '両手のひらを合わせて、リングがいっぱいになるまでキープしてね。「オーブに戻る」ボタンでも戻れるよ。',
+  'No interaction is required. In Daydreaming, you can simply watch the underwater world drift by.': '何もしなくて大丈夫。空想モードでは、海の世界が流れていくのを眺めているだけでいいよ。',
+  'Moments': 'シーン', 'Cinematic': 'シネマティック', 'The Glass Orb': 'ガラスのオーブ', 'Ocean Metropolis': '海底都市', 'Living Room': 'リビング', 'Free Look (Drag)': '自由に見る（ドラッグ）'
+
 };
 
 export function translate(text: string, language: AppLanguage): string {
