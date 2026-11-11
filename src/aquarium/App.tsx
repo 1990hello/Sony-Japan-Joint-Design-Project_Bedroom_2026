@@ -24,6 +24,8 @@ export default function App({ language = 'en' }: { language?: AppLanguage }) {
   const handTrackerRef = useRef<HandTracker | null>(null);
 
   const [currentMoment, setCurrentMoment] = useState<ExperienceMoment>(1);
+  const languageRef = useRef(language);
+  languageRef.current = language;
   currentMomentRef.current = currentMoment;
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('cinematic');
   const [isDebugHUDVisible, setIsDebugHUDVisible] = useState(false);
@@ -40,11 +42,11 @@ export default function App({ language = 'en' }: { language?: AppLanguage }) {
   const [isHandHoveringEnter, setIsHandHoveringEnter] = useState(false);
 
   const showToast = useCallback((msg: string) => {
-    setInteractionToast(translate(msg, language));
+    setInteractionToast(translate(msg, languageRef.current));
     setTimeout(() => {
       setInteractionToast((prev) => (prev === msg ? null : prev));
     }, 2800);
-  }, [language]);
+  }, []);
 
   // Show concise, stage-specific interaction guidance when the underwater experience changes mode.
   useEffect(() => {
