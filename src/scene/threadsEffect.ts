@@ -8,6 +8,7 @@
  */
 
 import * as THREE from 'three';
+import type { AppLanguage } from '../i18n';
 
 export type Stage2Phase = 'idle' | 'black_tethers_active' | 'golden_orbit' | 'golden_dissolving_downwards' | 'golden_weaving_words' | 'settled';
 
@@ -34,7 +35,8 @@ export class ThreadsEffect {
   private descendingStrands: THREE.Line[] = [];
   private orbitCurves: THREE.Line[] = [];
 
-  public readonly fullMessage = "You've put in so much effort, and it really shows. Take a moment to be proud — you've done more than you think.";
+  public fullMessage = "You've put in so much effort, and it really shows. Take a moment to be proud — you've done more than you think.";
+  private language: AppLanguage = 'en';
   private textRevealFraction: number = 0;
 
   private onPhaseBComplete?: () => void;
@@ -261,6 +263,14 @@ export class ThreadsEffect {
     this.group.add(this.dissolutionParticles);
   }
 
+  public setLanguage(language: AppLanguage) {
+    this.language = language;
+    this.fullMessage = language === 'ja'
+      ? 'たくさんがんばってきたね。その努力はちゃんと伝わってるよ。少し誇りに思っていいんだよ。思っている以上に、たくさんのことをやり遂げてきたから。'
+      : "You've put in so much effort, and it really shows. Take a moment to be proud — you've done more than you think.";
+    this.renderText(this.textRevealFraction);
+  }
+
   /**
    * Render progressively woven text on canvas
    */
@@ -292,15 +302,25 @@ export class ThreadsEffect {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const line1Total = "You've put in so much effort, and it really shows.";
-    const line2Total = "Take a moment to be proud —";
-    const line3Total = "you've done more than you think.";
+    const [line1Total, line2Total, line3Total] = this.language === 'ja'
+      ? ['たくさんがんばってきたね。', 'その努力はちゃんと伝わってるよ。', '思っている以上に、やり遂げてきたよ。']
+      : ["You've put in so much effort, and it really shows.", 'Take a moment to be proud —', "you've done more than you think."];
 
     let line1 = '';
     let line2 = '';
     let line3 = '';
 
-    if (revealedCount <= line1Total.length) {
+    if (this.language === 'ja') {
+      if (revealedCount <= line1Total.length) line1 = currentText;
+      else if (revealedCount <= line1Total.length + line2Total.length) {
+        line1 = line1Total;
+        line2 = currentText.substring(line1Total.length);
+      } else {
+        line1 = line1Total;
+        line2 = line2Total;
+        line3 = currentText.substring(line1Total.length + line2Total.length);
+      }
+    } else if (revealedCount <= line1Total.length) {
       line1 = currentText;
     } else if (revealedCount <= line1Total.length + 1 + line2Total.length) {
       line1 = line1Total;
