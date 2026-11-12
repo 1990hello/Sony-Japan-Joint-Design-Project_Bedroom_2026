@@ -16,7 +16,6 @@ interface HandIndicatorProps {
 
 export const HandIndicator: React.FC<HandIndicatorProps> = ({
   gestureState,
-  isOverOrb,
   twoHandsDwellProgress = 0,
   isTwoHandsDetected = false,
   secondHandLandmarks,
