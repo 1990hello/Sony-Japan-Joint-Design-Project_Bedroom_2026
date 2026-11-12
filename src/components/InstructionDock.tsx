@@ -277,21 +277,21 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
             <div className="w-[min(320px,calc(100vw-5.5rem))] rounded-2xl border border-stone-700 bg-stone-950/95 p-4 shadow-2xl backdrop-blur-md">
               <div className="mb-3 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400">Orb controls</p>
-                  <h3 className="text-sm font-semibold text-stone-100">Two simple gestures</h3>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400">{t('Orb controls')}</p>
+                  <h3 className="text-sm font-semibold text-stone-100">{t('Two simple gestures')}</h3>
                 </div>
-                <button onClick={() => setIsGestureGuideOpen(false)} className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-800 hover:text-white" aria-label="Close gesture guide">
+                <button onClick={() => setIsGestureGuideOpen(false)} className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-800 hover:text-white" aria-label={t('Close gesture guide')}>
                   <ChevronDown className="h-4 w-4" />
                 </button>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-950/25 p-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300"><Hand className="h-5 w-5" /></div>
-                  <p className="text-sm font-semibold text-amber-100">Pinch to move orb</p>
+                  <p className="text-sm font-semibold text-amber-100">{t('Pinch to move orb')}</p>
                 </div>
                 <div className="flex items-center gap-3 rounded-xl border border-sky-500/25 bg-sky-950/25 p-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-300"><Sparkles className="h-5 w-5" /></div>
-                  <p className="text-sm font-semibold text-sky-100">Wave to send orb back to docking station</p>
+                  <p className="text-sm font-semibold text-sky-100">{t('Wave to send orb back to docking station')}</p>
                 </div>
               </div>
             </div>
@@ -300,11 +300,11 @@ export const InstructionDock: React.FC<InstructionDockProps> = ({
             onClick={() => setIsGestureGuideOpen(!isGestureGuideOpen)}
             className="flex items-center gap-2 rounded-l-xl rounded-r-md border border-amber-500/40 bg-stone-950/95 px-3 py-3 text-amber-200 shadow-xl backdrop-blur-md transition-colors hover:bg-stone-800"
             aria-expanded={isGestureGuideOpen}
-            aria-label={isGestureGuideOpen ? "Hide orb instructions" : "Show orb instructions"}
-            title="Orb interaction instructions"
+            aria-label={isGestureGuideOpen ? t('Hide orb instructions') : t('Show orb instructions')}
+            title={t('Orb interaction instructions')}
           >
             <Hand className="h-5 w-5" />
-            <span className="hidden sm:inline text-xs font-semibold tracking-wide">ORB GUIDE</span>
+            <span className="hidden sm:inline text-xs font-semibold tracking-wide">{t('ORB GUIDE')}</span>
             {isGestureGuideOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </button>
         </div>
