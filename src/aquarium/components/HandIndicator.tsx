@@ -16,7 +16,6 @@ interface HandIndicatorProps {
 
 export const HandIndicator: React.FC<HandIndicatorProps> = ({
   gestureState,
-  isOverOrb,
   twoHandsDwellProgress = 0,
   isTwoHandsDetected = false,
   secondHandLandmarks,
@@ -25,10 +24,7 @@ export const HandIndicator: React.FC<HandIndicatorProps> = ({
     return null;
   }
 
-  const { x, y, isPinching, pinchProgress } = gestureState;
-
-  // Outer reticle diameter contracts smoothly as pinch progress increases (28px -> 12px)
-  const ringSize = Math.max(12, Math.round(28 - pinchProgress * 16));
+  const { x, y, isPinching } = gestureState;
 
   const showReturnProgress = isTwoHandsDetected && twoHandsDwellProgress > 0.01 && !!secondHandLandmarks?.[0] && !!gestureState.allLandmarks?.[0];
   const firstWrist = gestureState.allLandmarks?.[0];
@@ -52,27 +48,19 @@ export const HandIndicator: React.FC<HandIndicatorProps> = ({
       aria-hidden="true"
     >
       <div
-        className="absolute -translate-x-1/2 -translate-y-1/2 transition-transform duration-75 ease-out"
+        className="absolute -translate-x-1/2 -translate-y-1/2"
         style={{
           left: `${(x * 100).toFixed(2)}%`,
           top: `${(y * 100).toFixed(2)}%`,
         }}
       >
-        {/* Subtle pinch-release confirmation shockwave ripple */}
-        {isPinching && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-amber-300/90 animate-ping opacity-60" />
-        )}
-
-        {/* Shared high-contrast reticle: amber ring, white centre, dark outline */}
+        {/* Match Bedroom cursor: fixed amber ring, white centre, dark outline.
+            Pinching scales the cursor slightly without moving its palm anchor. */}
         <div
-          className={`flex items-center justify-center rounded-full transition-all duration-100 border-2 border-slate-950 bg-amber-300/20 ${
-            isOverOrb
-              ? '[box-shadow:0_0_0_1px_rgba(255,200,87,1),0_0_14px_rgba(255,200,87,0.95),0_0_26px_rgba(255,200,87,0.5)]'
-              : '[box-shadow:0_0_0_1px_rgba(255,200,87,0.95),0_0_10px_rgba(255,200,87,0.78),0_0_22px_rgba(255,200,87,0.35)]'
-          }`}
+          className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-slate-950 bg-amber-300/20 transition-transform duration-100"
           style={{
-            width: `${ringSize}px`,
-            height: `${ringSize}px`,
+            boxShadow: '0 0 0 1px rgba(255, 200, 87, 0.98), 0 0 12px rgba(255, 200, 87, 0.78), 0 0 24px rgba(255, 200, 87, 0.35)',
+            transform: isPinching ? 'scale(0.88)' : 'scale(1)',
           }}
         >
           <div
@@ -81,16 +69,7 @@ export const HandIndicator: React.FC<HandIndicatorProps> = ({
           />
         </div>
 
-        {/* Minimal Contextual Spatial Label when hovering interactive objects */}
-        {isOverOrb && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-            <div
-              className="px-2 py-0.5 rounded text-[9px] font-mono tracking-widest uppercase transition-all duration-200 bg-slate-950/85 text-amber-100 border border-amber-300/50"
-            >
-              {isPinching ? 'RELEASE TO EXPAND' : 'PINCH TO SELECT'}
-            </div>
-          </div>
-        )}
+
       </div>
 
       {showReturnProgress && (

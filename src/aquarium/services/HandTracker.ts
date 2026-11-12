@@ -332,9 +332,12 @@ export class HandTracker {
     const thumb = hand[4];
     const index = hand[8];
 
-    // Natural mirror transformation: user moving their right hand rightwards moves pointer right
-    const rawInteractionX = 1 - (thumb.x + index.x) * 0.5;
-    const rawInteractionY = (thumb.y + index.y) * 0.5;
+    // Anchor the cursor to the palm (middle-finger MCP, landmark 9), exactly
+    // like Bedroom. Pinching only changes gesture state; fingertip movement
+    // must never pull the cursor away from the palm.
+    const palmAnchor = hand[9];
+    const rawInteractionX = 1 - palmAnchor.x;
+    const rawInteractionY = palmAnchor.y;
 
     // Euclidean distance between thumb and index tips
     const dx = thumb.x - index.x;
