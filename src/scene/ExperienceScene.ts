@@ -307,7 +307,25 @@ export class ExperienceScene {
     return this.raycaster.intersectObject(this.bedroom.doorwayHitArea, false).length > 0;
   }
 
-  /** Return from the tabletop close-up and gently direct the user's view to the existing doorway. */
+  /** Pull back from the tabletop ritual to reveal the complete footsteps trail across the floor. */
+  private reframeToFootsteps(onComplete: () => void) {
+    const footstepsLookTarget = new THREE.Vector3(1.45, 0.12, -1.95);
+    const wideViewPosition = new THREE.Vector3(0.0, 1.62, 1.45);
+    this.cameraAnimation = {
+      mode: 'out',
+      startPos: this.camera.position.clone(),
+      targetPos: wideViewPosition,
+      startLook: this.cameraLookTarget.clone(),
+      targetLook: footstepsLookTarget,
+      duration: 2.1,
+      elapsed: 0,
+      holdDuration: 0,
+      holdTimer: 0,
+      onComplete,
+    };
+  }
+
+  /** From the wide footsteps view, move the user's attention toward the existing doorway. */
   private reframeToDoorway(onComplete: () => void) {
     const doorwayLookTarget = new THREE.Vector3(3.48, 1.15, -4.1);
     this.cameraAnimation = {
@@ -721,9 +739,10 @@ export class ExperienceScene {
     this.setSubstate('orb_docked');
     this.callbacks.onInstructionChange('Observe: The orb rests in the firewood dock');
 
-    // Sequence: Glowing footsteps first, then film printing with wisdom inside orb
+    // The edible-film ritual now comes before the footsteps reveal.
+    // Keep the existing short pause after the orb docks, then print the film.
     setTimeout(() => {
-      this.startGlowingFootsteps();
+      this.printFilmAndDisplayWisdomInsideOrb();
     }, 1000);
   }
 
@@ -736,10 +755,17 @@ export class ExperienceScene {
         soundscape.playFootstepChime(stepIdx);
       },
       () => {
-        // Footsteps path lit -> begin printing circular film & wisdom quote inside orb!
+        // Once the full trail has guided the user's attention to the doorway,
+        // move the camera in and enable the existing doorway interaction.
         setTimeout(() => {
-          this.printFilmAndDisplayWisdomInsideOrb();
-        }, 1000);
+          this.reframeToDoorway(() => {
+            if (this.currentStage !== 'completed' || this.doorwayTransitionStarted) return;
+            this.doorwayReady = true;
+            this.setSubstate('doorway_ready');
+            this.callbacks.onInstructionChange('When you are ready, pinch the doorway to enter the Aquarium.');
+            this.bedroom.setDoorwayHighlighted(true);
+          });
+        }, 700);
       }
     );
   }
@@ -801,25 +827,23 @@ export class ExperienceScene {
     this.callbacks.onInstructionChange(`Observe: ${finalMessage}`);
     this.callbacks.onNarrationSubtitle(finalMessage);
 
-    // After either ritual choice, return from the tabletop close-up and turn the
-    // seated viewpoint toward the existing doorway. Only then invite the user to pinch it.
-    const guideAttentionToDoorway = () => {
-      if (this.currentStage !== 'completed' || this.doorwayTransitionStarted || this.doorwayReady || this.doorwayReframeStarted) return;
+    // The ritual is the first action. Once its closing narration finishes,
+    // pull back to reveal the footsteps before animating them across the floor.
+    const revealFootsteps = () => {
+      if (this.currentStage !== 'completed' || this.doorwayTransitionStarted || this.doorwayReframeStarted) return;
       this.doorwayReframeStarted = true;
-      this.reframeToDoorway(() => {
+      this.callbacks.onNarrationSubtitle(null);
+      this.reframeToFootsteps(() => {
         if (this.currentStage !== 'completed' || this.doorwayTransitionStarted) return;
-        this.doorwayReady = true;
-        this.setSubstate('doorway_ready');
-        this.callbacks.onInstructionChange('When you are ready, pinch the doorway to enter the Aquarium.');
-        this.bedroom.setDoorwayHighlighted(true);
+        this.startGlowingFootsteps();
       });
     };
 
     setTimeout(() => {
-      soundscape.speak(finalMessage, guideAttentionToDoorway);
+      soundscape.speak(finalMessage, revealFootsteps);
     }, 600);
     // Fallback if speech is unavailable or its completion callback does not fire.
-    setTimeout(guideAttentionToDoorway, 6500);
+    setTimeout(revealFootsteps, 6500);
   }
 
   private setSubstate(sub: string) {
