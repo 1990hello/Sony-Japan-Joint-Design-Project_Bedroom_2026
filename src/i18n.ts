@@ -10,6 +10,7 @@ const ja: Record<string, string> = {
   'Hand Track On': '手の認識 ON', 'Hand Track Off': '手の認識 OFF', 'Hand Detected': '手を認識中', 'Show hand in front of camera': 'カメラに手を見せてね',
   'You can interact with webcam gestures or mouse click & drag': '手のジェスチャー、またはマウスのクリック＆ドラッグで操作できるよ',
   'Orb controls': 'オーブの操作', 'Two simple gestures': 'かんたんな2つの動き', 'Pinch to move orb': 'つまんでオーブを動かす', 'Wave to send orb back to docking station': '手を振ってオーブを戻す',
+  'ORB GUIDE': 'オーブガイド', 'Close gesture guide': '操作ガイドを閉じる', 'Hide orb instructions': 'オーブの説明を隠す', 'Show orb instructions': 'オーブの説明を表示', 'Orb interaction instructions': 'オーブの操作説明',
   'EXORA · INTERACTION GUIDE': 'EXORA · 操作ガイド', 'Observe & explore': '眺めて、探検しよう', 'Interact with the soundscape': '音の世界と遊ぼう', 'Daydream at your own pace': '自分のペースでぼんやりしよう',
   'To return to the orb:': 'オーブに戻るには：', 'bring both palms together and hold. The ring between your hands shows your progress.': '両手のひらを合わせて、そのままキープ。手の間のリングで進み具合がわかるよ。',
   '? INTERACTION GUIDE': '? 操作ガイド',
